@@ -6,49 +6,37 @@ export function useAdminOwners(page = 1, pageSize = 12) {
   return useQuery({
     queryKey: ["admin-owners", page, pageSize],
     queryFn: async () => {
-      // 1. Try to fetch with RPC first
+      // 1. Try to fetch with RPC first (using standard parameter naming)
       const { data, error } = await supabase.rpc("get_admin_owners_stats", {
-        page_size: pageSize,
+        p_limit: pageSize,
+        p_offset: (page - 1) * pageSize,
+        page_size: pageSize,   // including both styles to be safe
         page_number: page
       });
       
       let finalData = data;
       
-      // 2. Fallback to direct profiles fetch if RPC is empty or fails
+      // 2. Fallback to direct profiles fetch if RPC fails
       if (error || !data || data.length === 0) {
-        console.warn("RPC failed or empty, falling back to direct profiles fetch");
+        console.warn("RPC failed, falling back to direct profiles fetch...");
         const { data: directData, error: directError } = await supabase
           .from("profiles")
-          .select(`
-            *,
-            customers:profiles!profiles_owner_id_fkey(count),
-            debts:profiles!profiles_owner_id_fkey(total_amount:debts(sum:amount))
-          `)
+          .select("*")
           .eq("role", "owner")
           .order("created_at", { ascending: false });
         
-        if (directError) {
-          // Even lighter fallback if the complex join fails
-          const { data: lightData, error: lightError } = await supabase
-            .from("profiles")
-            .select("*")
-            .eq("role", "owner")
-            .order("created_at", { ascending: false });
-          if (lightError) throw lightError;
-          finalData = lightData;
-        } else {
-          finalData = directData;
-        }
+        if (directError) throw directError;
+        finalData = directData;
       }
 
       return (finalData || []).map((p: any) => ({
         ...p,
         subscription_status: getEffectiveStatus(p),
         stats: {
-          customersCount: Number(p.customers?.[0]?.count || p.customers_count || 0),
-          totalDebts: Number(p.debts?.[0]?.total_amount || p.total_debts || 0),
+          customersCount: Number(p.customers_count || 0),
+          totalDebts: Number(p.total_debts || 0),
           totalPayments: Number(p.total_payments || 0),
-          remainingBalance: Number((p.debts?.[0]?.total_amount || 0) - (p.total_payments || 0))
+          remainingBalance: Number(p.remaining_balance || (p.total_debts - p.total_payments) || 0)
         }
       })).filter(p => p !== null);
     },
