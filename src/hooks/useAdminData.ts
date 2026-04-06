@@ -6,14 +6,28 @@ export function useAdminOwners(page = 1, pageSize = 12) {
   return useQuery({
     queryKey: ["admin-owners", page, pageSize],
     queryFn: async () => {
-      // Use RPC for high performance and pagination
+      // 1. Try to fetch with RPC first
       const { data, error } = await supabase.rpc("get_admin_owners_stats", {
         page_size: pageSize,
         page_number: page
       });
-      if (error) throw error;
+      
+      let finalData = data;
+      
+      // 2. Fallback to direct profiles fetch if RPC is empty or fails
+      if (error || !data || data.length === 0) {
+        console.warn("RPC failed or empty, falling back to direct profiles fetch");
+        const { data: directData, error: directError } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("role", "owner")
+          .order("created_at", { ascending: false });
+        
+        if (directError) throw directError;
+        finalData = directData;
+      }
 
-      return (data || []).map((p: any) => ({
+      return (finalData || []).map((p: any) => ({
         ...p,
         subscription_status: getEffectiveStatus(p),
         stats: {
@@ -22,7 +36,7 @@ export function useAdminOwners(page = 1, pageSize = 12) {
           totalPayments: Number(p.total_payments || 0),
           remainingBalance: Number(p.remaining_balance || 0)
         }
-      })).filter(p => p.subscription_status !== null);
+      })).filter(p => p !== null);
     },
     staleTime: 1000 * 60 * 5, // 5 minutes cache
   });
@@ -100,9 +114,28 @@ export function useAdminStats() {
   return useQuery({
     queryKey: ["admin-stats"],
     queryFn: async () => {
+      // 1. Try RPC first
       const { data, error } = await supabase.rpc("get_admin_dashboard_stats");
-      if (error) throw error;
-      return data;
+      
+      if (!error && data) return data;
+
+      // 2. Manual Fallback if RPC fails
+      console.warn("Stats RPC failed, calculating manually...");
+      const { data: profiles, error: pError } = await supabase
+        .from("profiles")
+        .select("subscription_status, role")
+        .eq("role", "owner");
+
+      if (pError) throw pError;
+
+      const stats = {
+        total_owners: (profiles || []).length,
+        active_owners: (profiles || []).filter(p => p.subscription_status === 'active').length,
+        trial_owners: (profiles || []).filter(p => p.subscription_status === 'trial').length,
+        expired_owners: (profiles || []).filter(p => p.subscription_status === 'expired').length,
+      };
+
+      return stats;
     },
     staleTime: 1000 * 60 * 10, // 10 minutes cache for global stats
   });
@@ -421,7 +454,7 @@ export function useAdminRequests() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("admin_requests")
-        .select("*, profiles!admin_requests_owner_id_fkey(name, business_name, phone)")
+        .select("*, profiles:owner_id(name, business_name, phone)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data || [];
