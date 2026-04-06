@@ -197,13 +197,28 @@ export default function AdminOwners() {
                   </div>
                 </div>
 
-                {/* Action CTA */}
-                <Button asChild className="w-full h-12 rounded-[20px] font-black uppercase text-xs tracking-widest shadow-xl shadow-primary/10 transition-all hover:scale-[1.02] active:scale-95 group/btn">
-                  <Link to={`/admin/owners/${o.user_id}`} className="flex items-center justify-center gap-3">
-                    {lang === "ar" ? "إدارة المنشأة" : "Enter Dashboard"}
-                    <ArrowRight className={`h-4 w-4 transition-transform group-hover/btn:translate-x-1 ${lang === "ar" ? "rotate-180 group-hover/btn:-translate-x-1" : ""}`} />
-                  </Link>
-                </Button>
+                {/* Action CTA Section */}
+                <div className="flex gap-3 mt-auto">
+                  <Button 
+                    variant="outline"
+                    onClick={() => handleToggleSuspension(o.user_id, o.is_suspended)}
+                    className={`flex-1 h-12 rounded-[20px] font-black uppercase text-[10px] tracking-widest transition-all hover:scale-[1.02] active:scale-95 border-2 ${
+                      o.is_suspended 
+                        ? 'border-emerald-500/20 text-emerald-600 hover:bg-emerald-50' 
+                        : 'border-destructive/20 text-destructive hover:bg-destructive/5'
+                    }`}
+                  >
+                    {o.is_suspended ? <ShieldCheck className="h-4 w-4 me-2" /> : <ShieldAlert className="h-4 w-4 me-2" />}
+                    {o.is_suspended ? (lang === "ar" ? "تفعيل" : "ACTIVATE") : (lang === "ar" ? "إيقاف" : "STOP")}
+                  </Button>
+
+                  <Button asChild className="flex-[1.5] h-12 rounded-[20px] font-black uppercase text-[10px] tracking-widest shadow-xl shadow-primary/10 transition-all hover:scale-[1.02] active:scale-95 group/btn">
+                    <Link to={`/admin/owners/${o.user_id}`} className="flex items-center justify-center gap-2">
+                      {lang === "ar" ? "إدارة" : "MANAGE"}
+                      <ArrowRight className={`h-4 w-4 transition-transform group-hover/btn:translate-x-1 ${lang === "ar" ? "rotate-180 group-hover/btn:-translate-x-1" : ""}`} />
+                    </Link>
+                  </Button>
+                </div>
               </div>
             ))}
           </div>

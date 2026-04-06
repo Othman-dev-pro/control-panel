@@ -19,22 +19,36 @@ export function useAdminOwners(page = 1, pageSize = 12) {
         console.warn("RPC failed or empty, falling back to direct profiles fetch");
         const { data: directData, error: directError } = await supabase
           .from("profiles")
-          .select("*")
+          .select(`
+            *,
+            customers:profiles!profiles_owner_id_fkey(count),
+            debts:profiles!profiles_owner_id_fkey(total_amount:debts(sum:amount))
+          `)
           .eq("role", "owner")
           .order("created_at", { ascending: false });
         
-        if (directError) throw directError;
-        finalData = directData;
+        if (directError) {
+          // Even lighter fallback if the complex join fails
+          const { data: lightData, error: lightError } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("role", "owner")
+            .order("created_at", { ascending: false });
+          if (lightError) throw lightError;
+          finalData = lightData;
+        } else {
+          finalData = directData;
+        }
       }
 
       return (finalData || []).map((p: any) => ({
         ...p,
         subscription_status: getEffectiveStatus(p),
         stats: {
-          customersCount: Number(p.customers_count || 0),
-          totalDebts: Number(p.total_debts || 0),
+          customersCount: Number(p.customers?.[0]?.count || p.customers_count || 0),
+          totalDebts: Number(p.debts?.[0]?.total_amount || p.total_debts || 0),
           totalPayments: Number(p.total_payments || 0),
-          remainingBalance: Number(p.remaining_balance || 0)
+          remainingBalance: Number((p.debts?.[0]?.total_amount || 0) - (p.total_payments || 0))
         }
       })).filter(p => p !== null);
     },
