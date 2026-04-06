@@ -129,10 +129,10 @@ export function useAdminStats() {
       if (pError) throw pError;
 
       const stats = {
-        total_owners: (profiles || []).length,
-        active_owners: (profiles || []).filter(p => p.subscription_status === 'active').length,
-        trial_owners: (profiles || []).filter(p => p.subscription_status === 'trial').length,
-        expired_owners: (profiles || []).filter(p => p.subscription_status === 'expired').length,
+        totalOwners: (profiles || []).length,
+        activeSubscriptions: (profiles || []).filter(p => p.subscription_status === 'active').length,
+        totalCustomers: 0, // Fallback doesn't have deep customer count without more queries
+        totalRevenue: 0,
       };
 
       return stats;
