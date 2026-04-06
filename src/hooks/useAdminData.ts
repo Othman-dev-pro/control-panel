@@ -2,32 +2,97 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getEffectiveStatus } from "@/lib/utils";
 
-export function useAdminOwners() {
+export function useAdminOwners(page = 1, pageSize = 12) {
   return useQuery({
-    queryKey: ["admin-owners"],
+    queryKey: ["admin-owners", page, pageSize],
     queryFn: async () => {
-      // Step 1: get owner user_ids from user_roles
-      const { data: ownerRoles, error: rolesError } = await supabase
-        .from("user_roles")
-        .select("user_id")
-        .eq("role", "owner");
-      if (rolesError) throw rolesError;
-      if (!ownerRoles?.length) return [];
-
-      const ownerIds = ownerRoles.map(r => r.user_id);
-
-      // Step 2: fetch their profiles
-      const { data: profiles, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .in("user_id", ownerIds);
+      // Use RPC for high performance and pagination
+      const { data, error } = await supabase.rpc("get_admin_owners_stats", {
+        page_size: pageSize,
+        page_number: page
+      });
       if (error) throw error;
 
-      return (profiles || []).map((p: any) => ({
+      return (data || []).map((p: any) => ({
         ...p,
-        subscription_status: getEffectiveStatus(p)
+        subscription_status: getEffectiveStatus(p),
+        stats: {
+          customersCount: Number(p.customers_count || 0),
+          totalDebts: Number(p.total_debts || 0),
+          totalPayments: Number(p.total_payments || 0),
+          remainingBalance: Number(p.remaining_balance || 0)
+        }
+      })).filter(p => p.subscription_status !== null);
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes cache
+  });
+}
+
+export function useOwnerCustomers(ownerId: string) {
+  return useQuery({
+    queryKey: ["owner-customers", ownerId],
+    queryFn: async () => {
+      if (!ownerId) return [];
+      
+      // Fetch customers
+      const { data: customers, error: customerError } = await supabase
+        .from("customers")
+        .select("*")
+        .eq("owner_id", ownerId)
+        .order("name", { ascending: true });
+      if (customerError) throw customerError;
+
+      // Fetch all transaction dates for this owner's customers to find the first movement
+      const [debtsRes, paymentsRes] = await Promise.all([
+        supabase.from("debts").select("customer_id, created_at").eq("owner_id", ownerId),
+        supabase.from("payments").select("customer_id, created_at").eq("owner_id", ownerId),
+      ]);
+
+      const firstTxMap: Record<string, string> = {};
+      
+      const processDates = (items: any[]) => {
+        items.forEach(item => {
+          const cid = item.customer_id;
+          const date = item.created_at;
+          if (!firstTxMap[cid] || new Date(date) < new Date(firstTxMap[cid])) {
+            firstTxMap[cid] = date;
+          }
+        });
+      };
+
+      processDates(debtsRes.data || []);
+      processDates(paymentsRes.data || []);
+
+      return (customers || []).map(c => ({
+        ...c,
+        firstTransactionDate: firstTxMap[c.id] || null
       }));
     },
+    enabled: !!ownerId,
+  });
+}
+
+export function useCustomerTransactions(customerId: string) {
+  return useQuery({
+    queryKey: ["customer-transactions", customerId],
+    queryFn: async () => {
+      if (!customerId) return [];
+      const [debtsRes, paymentsRes] = await Promise.all([
+        supabase.from("debts").select("*").eq("customer_id", customerId),
+        supabase.from("payments").select("*").eq("customer_id", customerId),
+      ]);
+
+      if (debtsRes.error) throw debtsRes.error;
+      if (paymentsRes.error) throw paymentsRes.error;
+
+      const debts = (debtsRes.data || []).map(d => ({ ...d, type: "debt" }));
+      const payments = (paymentsRes.data || []).map(p => ({ ...p, type: "payment" }));
+
+      return [...debts, ...payments].sort((a, b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+    },
+    enabled: !!customerId,
   });
 }
 
@@ -35,37 +100,11 @@ export function useAdminStats() {
   return useQuery({
     queryKey: ["admin-stats"],
     queryFn: async () => {
-      const [ownersRes, customersRes, debtsRes, paymentsRes] = await Promise.all([
-        supabase.from("user_roles").select("id", { count: "exact", head: true }).eq("role", "owner"),
-        supabase.from("customers").select("id", { count: "exact", head: true }),
-        supabase.from("debts").select("amount"),
-        supabase.from("payments").select("amount"),
-      ]);
-
-      const totalDebts = (debtsRes.data || []).reduce((sum, d) => sum + Number(d.amount), 0);
-      const totalPayments = (paymentsRes.data || []).reduce((sum, p) => sum + Number(p.amount), 0);
-
-      // حساب الاشتراكات النشطة للمالكين فقط
-      const { data: activeProfiles } = await supabase
-        .from("profiles")
-        .select("subscription_status, subscription_ends_at")
-        .eq("role", "owner"); // فلترة المالكين فقط
-
-      let activeCount = 0;
-      const now = new Date();
-      (activeProfiles || []).forEach(p => {
-        if (p.subscription_status === "active" && (!p.subscription_ends_at || new Date(p.subscription_ends_at) >= now)) {
-          activeCount++;
-        }
-      });
-
-      return {
-        totalOwners: ownersRes.count || 0,
-        activeSubscriptions: activeCount || 0,
-        totalCustomers: customersRes.count || 0,
-        totalRevenue: totalPayments,
-      };
+      const { data, error } = await supabase.rpc("get_admin_dashboard_stats");
+      if (error) throw error;
+      return data;
     },
+    staleTime: 1000 * 60 * 10, // 10 minutes cache for global stats
   });
 }
 
@@ -99,7 +138,8 @@ export function useSuspendOwner() {
         .update({
           is_suspended: suspend,
           is_subscription_active: !suspend,
-          ...(suspend ? { subscription_status: "expired" } : {}),
+          // عند الإيقاف نجعل الحالة 'expired'، وعند التفعيل نجعلها 'active'
+          subscription_status: suspend ? "expired" : "active",
         })
         .eq("user_id", userId)
         .eq("role", "owner"); // تأكد أننا نحدث مالكاً فقط
@@ -123,6 +163,52 @@ export function usePauseSubscription() {
         })
         .eq("user_id", userId)
         .eq("role", "owner"); // تأكد أننا نحدث مالكاً فقط
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ["admin-owners"] });
+      await qc.invalidateQueries({ queryKey: ["admin-stats"] });
+    },
+  });
+}
+
+export function useResumeSubscription() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ userId }: { userId: string }) => {
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          subscription_status: "active",
+          is_subscription_active: true,
+          is_suspended: false,
+        })
+        .eq("user_id", userId)
+        .eq("role", "owner");
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ["admin-owners"] });
+      await qc.invalidateQueries({ queryKey: ["admin-stats"] });
+    },
+  });
+}
+
+export function useResetSubscription() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ userId }: { userId: string }) => {
+      const now = new Date().toISOString();
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          subscription_status: "expired",
+          is_subscription_active: false,
+          subscription_ends_at: now,
+          trial_ends_at: now,
+        })
+        .eq("user_id", userId)
+        .eq("role", "owner");
       if (error) throw error;
     },
     onSuccess: async () => {
@@ -250,5 +336,176 @@ export function useUpdateSetting() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["app-settings"] }),
+  });
+}
+
+export function useDeleteOwner() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      // 1. Delete linked employees (profiles where owner_id = userId)
+      const { error: employeesError } = await supabase
+        .from("profiles")
+        .delete()
+        .eq("owner_id", userId);
+      if (employeesError) throw employeesError;
+
+      // 2. Delete the owner profile itself
+      const { error: ownerError } = await supabase
+        .from("profiles")
+        .delete()
+        .eq("user_id", userId)
+        .eq("role", "owner");
+      if (ownerError) throw ownerError;
+      
+      // Note: Supabase RLS and foreign keys should handle the rest 
+      // (like customers staying but losing their owner link if configured)
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-owners"] });
+      qc.invalidateQueries({ queryKey: ["admin-stats"] });
+    },
+  });
+}
+
+export function useOwnerTransactions(ownerId: string) {
+  return useQuery({
+    queryKey: ["owner-transactions", ownerId],
+    queryFn: async () => {
+      if (!ownerId) return [];
+      const [debtsRes, paymentsRes] = await Promise.all([
+        supabase.from("debts").select("*, customers(name)").eq("owner_id", ownerId),
+        supabase.from("payments").select("*, customers(name)").eq("owner_id", ownerId),
+      ]);
+
+      if (debtsRes.error) throw debtsRes.error;
+      if (paymentsRes.error) throw paymentsRes.error;
+
+      const debts = (debtsRes.data || []).map(d => ({ 
+        ...d, 
+        type: "debt",
+        customer_name: d.customers?.name 
+      }));
+      const payments = (paymentsRes.data || []).map(p => ({ 
+        ...p, 
+        type: "payment",
+        customer_name: p.customers?.name 
+      }));
+
+      return [...debts, ...payments].sort((a, b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+    },
+    enabled: !!ownerId,
+  });
+}
+
+export function useUpdateAdminAuth() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ email, password }: { email?: string; password?: string }) => {
+      const { data, error } = await supabase.auth.updateUser({ email, password });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-stats"] });
+    },
+  });
+}
+
+// Unified Administrative Requests (Deletion, Backup, etc.)
+export function useAdminRequests() {
+  return useQuery({
+    queryKey: ["admin-requests"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("admin_requests")
+        .select("*, profiles!admin_requests_owner_id_fkey(name, business_name, phone)")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+}
+
+export function useApproveRequest() {
+  const qc = useQueryClient();
+  const deleteOwner = useDeleteOwner();
+
+  return useMutation({
+    mutationFn: async ({ requestId, ownerId, type, message, days, isManual }: { 
+      requestId: string; ownerId: string; type: 'deletion' | 'backup'; message: string; days?: number; isManual?: boolean 
+    }) => {
+      let finalMsg = message;
+      let status = "approved";
+      let scheduledDeletionAt = null;
+
+      if (type === 'deletion') {
+        if (isManual) {
+          finalMsg = message || "تمت الموافقة على طلبك. سيتم حذف حسابك يدوياً خلال 5 دقائق.";
+          status = "approved";
+        } else {
+          const d = days || 1;
+          const deletionDate = new Date();
+          deletionDate.setDate(deletionDate.getDate() + d);
+          scheduledDeletionAt = deletionDate.toISOString();
+          finalMsg = message || `تمت الموافقة على طلبك. سيتم حذف الحساب نهائياً بعد ${d} يوم/أيام (بتاريخ ${deletionDate.toLocaleDateString('ar-YE')}).`;
+          status = "scheduled";
+        }
+      } else if (type === 'backup') {
+        finalMsg = message || "تمت الموافقة على طلب النسخة الاحتياطية. سيتم التواصل معك قريباً لإرسال الملف.";
+        status = "approved";
+      }
+      
+      // 1. Send notification to owner
+      await supabase.from("notifications").insert({
+        user_id: ownerId,
+        title: type === 'deletion' ? "تحديث طلب حذف الحساب" : "تحديث طلب النسخ الاحتياطي",
+        message: finalMsg,
+        type: "info"
+      });
+
+      // 2. Update request status
+      const { error } = await supabase.from("admin_requests").update({ 
+        status: status, 
+        admin_message: finalMsg,
+        scheduled_deletion_at: scheduledDeletionAt,
+        updated_at: new Date().toISOString() 
+      }).eq("id", requestId);
+      
+      if (error) throw error;
+
+      // 3. If DELETION + IMMEDIATE: Execute purge now (or admin does it manually as per request)
+      // Note: Staying with 'admin does it manually from Owners page' as requested for Deletion.
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-requests"] });
+    },
+  });
+}
+
+export function useRejectRequest() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ requestId, ownerId, type, message }: { requestId: string; ownerId: string; type: string; message: string }) => {
+      const { error } = await supabase.from("admin_requests").update({ 
+        status: "rejected", 
+        admin_message: message,
+        updated_at: new Date().toISOString() 
+      }).eq("id", requestId);
+      if (error) throw error;
+
+      // Send rejection notification
+      await supabase.from("notifications").insert({
+        user_id: ownerId,
+        title: type === 'deletion' ? "رفض طلب حذف الحساب" : "رفض طلب النسخة الاحتياطية",
+        message: message || "عذراً، تم رفض طلبك. يرجى مراجعة الإدارة.",
+        type: "info"
+      });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-requests"] });
+    },
   });
 }

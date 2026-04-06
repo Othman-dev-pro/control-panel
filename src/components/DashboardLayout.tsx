@@ -6,7 +6,7 @@ import { useAppSettings } from "@/hooks/useAdminData";
 import {
   LayoutDashboard, LogOut, Menu, X, Receipt, Building2, Settings, Crown,
   ChevronLeft, ChevronRight, Shield, Globe, Image,
-  Palette, MessageCircle, Type, CreditCard, FileText
+  Palette, MessageCircle, Type, CreditCard, FileText, Database, UserX
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -28,6 +28,8 @@ const navItems: NavItem[] = [
   { labelKey: "nav.paymentAccounts", path: "/admin/payment-accounts", icon: Building2 },
   { labelKey: "nav.texts", path: "/admin/texts", icon: Type },
   { labelKey: "nav.settings", path: "/admin/settings", icon: Settings },
+  { labelKey: "nav.backup", path: "/admin/backup", icon: Database },
+  { labelKey: "nav.adminRequests", path: "/admin/requests", icon: UserX },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {

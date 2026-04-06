@@ -6,20 +6,24 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function getEffectiveStatus(profile: any) {
-  // إذا لم يكن هناك حالة اشتراك (زبون أو موظف) نعيد null مباشرة
+  // إذا لم يكن هناك ملف شخصي أو حالة اشتراك، فالحساب زبون أو موظف
   if (!profile || profile.subscription_status == null) return null;
 
-  let status = profile.subscription_status;
   const now = new Date();
+  
+  // إذا كانت المنشأة موقوفة يدوياً أو تم إلغاء تفعيل اشتراكها، فهي منتهية
+  if (profile.is_suspended || profile.is_subscription_active === false) return "expired";
 
-  if (status === "trial" && profile.trial_ends_at) {
-    if (new Date(profile.trial_ends_at) < now) {
-      status = "expired";
-    }
-  } else if (status === "active" && profile.subscription_ends_at) {
-    if (new Date(profile.subscription_ends_at) < now) {
-      status = "expired";
-    }
+  // 1. التحقق من تاريخ انتهاء الاشتراك المدفوع أولاً
+  if (profile.subscription_ends_at && new Date(profile.subscription_ends_at) > now) {
+    return "active";
   }
-  return status;
+
+  // 2. التحقق من تاريخ انتهاء الفترة التجريبية ثانياً
+  if (profile.trial_ends_at && new Date(profile.trial_ends_at) > now) {
+    return "trial";
+  }
+
+  // إذا لم يتحقق أي مما سبق، فالحالة منتهية
+  return "expired";
 }

@@ -126,6 +126,9 @@ const translations: Record<Language, Record<string, string>> = {
     "nav.contact": "التواصل",
     "nav.paymentAccounts": "حسابات الدفع",
     "nav.texts": "النصوص",
+    "nav.backup": "مركز الاسترداد",
+    "nav.deletionRequests": "الطلبات الإدارية",
+    "nav.adminRequests": "الطلبات الإدارية",
 
     // Owner Dashboard
     "owner.welcome": "مرحباً،",
@@ -421,6 +424,20 @@ const translations: Record<Language, Record<string, string>> = {
     "sub.expiredBanner": "انتهت الفترة التجريبية. الرجاء الاشتراك لتفعيل حسابك. بياناتك محفوظة ولا تقلق.",
     "sub.activeBanner": "الاشتراك نشط — متبقي {days} يوم",
     "sub.goToSub": "الاشتراك الآن",
+    "deletion.pending": "طلب معلق",
+    "deletion.approved": "تمت الموافقة",
+    "deletion.rejected": "تم الرفض",
+    "deletion.scheduled": "مجدول للحذف",
+    "deletion.immediate": "يدوي (خلال 5 دقائق)",
+    "deletion.type": "نوع الحذف",
+    "deletion.days": "الأيام المتبقية للحذف",
+    "deletion.approveConfirm": "سيتم جدولة حذف الحساب. أدخل عدد الأيام المتبقية قبل المسح النهائي:",
+    "deletion.rejectConfirm": "هل أنت متأكد من رفض الطلب؟",
+    "deletion.responsePlaceholder": "أدخل رسالة الرد للمالك...",
+    "requests.deletionTab": "طلبات الحذف",
+    "requests.backupTab": "طلبات النسخ الاحتياطي",
+    "requests.format": "الصيغة المطلوبة",
+    "requests.approveBackup": "هل تود الموافقة على طلب النسخة؟ (سيتم إشعار المالك ليتم التواصل معه)",
   },
   en: {
     // Common
@@ -535,6 +552,9 @@ const translations: Record<Language, Record<string, string>> = {
     "nav.contact": "Contact",
     "nav.paymentAccounts": "Payment Accounts",
     "nav.texts": "Texts",
+    "nav.backup": "Recovery Center",
+    "nav.deletionRequests": "Admin Requests",
+    "nav.adminRequests": "Admin Requests",
 
     // Owner Dashboard
     "owner.welcome": "Welcome back,",
@@ -798,6 +818,16 @@ const translations: Record<Language, Record<string, string>> = {
     "orders.rejectOrder": "Reject Order",
     "orders.rejectionReason": "Rejection Reason",
     "orders.rejectionReasonPlaceholder": "Enter rejection reason...",
+    "deletion.pending": "Pending Request",
+    "deletion.approved": "Approved",
+    "deletion.rejected": "Rejected",
+    "deletion.scheduled": "Scheduled",
+    "deletion.immediate": "Manual (Within 5 mins)",
+    "deletion.type": "Deletion Type",
+    "deletion.days": "Days until deletion",
+    "deletion.approveConfirm": "The account will be scheduled for deletion. Enter the number of days before final purge:",
+    "deletion.rejectConfirm": "Are you sure you want to reject this request?",
+    "deletion.responsePlaceholder": "Enter response message for the owner...",
     "orders.orderApproved": "Order approved successfully",
     "orders.orderRejected": "Order rejected",
 

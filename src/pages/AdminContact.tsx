@@ -5,14 +5,8 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, Plus, Trash2, MessageCircle, Phone } from "lucide-react";
-
-interface ContactItem {
-  type: "whatsapp" | "phone" | "email" | "address" | "hours";
-  label_ar: string; label_en: string;
-  value: string;
-  href: string;
-}
+import { Phone, Mail, MessageSquare, Save, Loader2, Headset, Share2, Globe, Send } from "lucide-react";
+import { StatsSkeleton } from "@/components/SkeletonLoader";
 
 export default function AdminContact() {
   const { t, lang } = useLanguage();
@@ -20,135 +14,140 @@ export default function AdminContact() {
   const { data: settings, isLoading } = useAppSettings();
   const updateSetting = useUpdateSetting();
 
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
-  const [contacts, setContacts] = useState<ContactItem[]>([]);
+  const [telegram, setTelegram] = useState("");
   const [saving, setSaving] = useState(false);
-
-  const defaultContacts: ContactItem[] = [
-    { type: "whatsapp", label_ar: "واتساب", label_en: "WhatsApp", value: "+967 700 000 000", href: "https://wa.me/967700000000" },
-    { type: "phone", label_ar: "هاتف", label_en: "Phone", value: "+967 700 000 000", href: "tel:+967700000000" },
-    { type: "email", label_ar: "البريد الإلكتروني", label_en: "Email", value: "support@debtflow.app", href: "mailto:support@debtflow.app" },
-    { type: "address", label_ar: "العنوان", label_en: "Address", value: "صنعاء، اليمن", href: "" },
-    { type: "hours", label_ar: "ساعات العمل", label_en: "Working Hours", value: "9:00 AM - 5:00 PM", href: "" },
-  ];
 
   useEffect(() => {
     if (settings) {
-      setWhatsapp(settings["admin_whatsapp"] || "967700000099");
-      try {
-        const saved = JSON.parse(settings["contact_info"] || "[]");
-        setContacts(saved.length > 0 ? saved : defaultContacts);
-      } catch { setContacts(defaultContacts); }
+      setPhone(settings["admin_phone"] || "");
+      setEmail(settings["admin_email"] || "");
+      setWhatsapp(settings["admin_whatsapp"] || "");
+      setTelegram(settings["admin_telegram"] || "");
     }
   }, [settings]);
-
-  const contactTypes = [
-    { value: "whatsapp", label: lang === "ar" ? "واتساب" : "WhatsApp" },
-    { value: "phone", label: lang === "ar" ? "هاتف" : "Phone" },
-    { value: "email", label: lang === "ar" ? "بريد إلكتروني" : "Email" },
-    { value: "address", label: lang === "ar" ? "عنوان" : "Address" },
-    { value: "hours", label: lang === "ar" ? "ساعات العمل" : "Working Hours" },
-  ];
-
-  const addContact = () => setContacts(prev => [...prev, { type: "whatsapp", label_ar: "", label_en: "", value: "", href: "" }]);
-  const removeContact = (i: number) => setContacts(prev => prev.filter((_, idx) => idx !== i));
-  const updateContact = (i: number, field: keyof ContactItem, val: string) => setContacts(prev => prev.map((c, idx) => idx === i ? { ...c, [field]: val } : c));
 
   const handleSave = async () => {
     setSaving(true);
     try {
       await Promise.all([
+        updateSetting.mutateAsync({ key: "admin_phone", value: phone }),
+        updateSetting.mutateAsync({ key: "admin_email", value: email }),
         updateSetting.mutateAsync({ key: "admin_whatsapp", value: whatsapp }),
-        updateSetting.mutateAsync({ key: "contact_info", value: JSON.stringify(contacts) }),
+        updateSetting.mutateAsync({ key: "admin_telegram", value: telegram }),
       ]);
-      toast({ title: t("common.success"), description: t("settings.saved") });
+      toast({ title: t("common.success") });
     } catch {
-      toast({ variant: "destructive", title: t("common.error"), description: t("common.errorMsg") });
+      toast({ variant: "destructive", title: t("common.error") });
     } finally {
       setSaving(false);
     }
   };
 
-  if (isLoading) {
-    return <DashboardLayout><div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div></DashboardLayout>;
-  }
-
   return (
     <DashboardLayout>
-      <div className="mx-auto max-w-3xl space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">
-              {lang === "ar" ? "معلومات التواصل" : "Contact Information"}
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              {lang === "ar" ? "إدارة رقم الواتساب ومعلومات التواصل" : "Manage WhatsApp number and contact info"}
-            </p>
+      <div className="mx-auto max-w-4xl space-y-10 animate-in fade-in duration-700">
+        {/* Header Section */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 bg-card/40 backdrop-blur-md p-8 rounded-[40px] border border-border/50 shadow-sm relative overflow-hidden">
+          <div className="flex items-center gap-5 relative z-10">
+            <div className="h-16 w-16 rounded-[24px] bg-primary/10 text-primary flex items-center justify-center ring-1 ring-primary/20 shadow-inner">
+              <Headset className="h-9 w-9" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-black tracking-tight text-foreground uppercase">
+                {lang === "ar" ? "بيانات التواصل" : "Contact Logistics"}
+              </h1>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-[0.2em] opacity-60 mt-1">
+                {lang === "ar" ? "إدارة قنوات الدعم الفني الرسمية" : "Official support channel orchestration"}
+              </p>
+            </div>
           </div>
-          <Button onClick={handleSave} disabled={saving} className="gap-2">
+          <Button onClick={handleSave} disabled={saving} size="lg" className="h-14 px-8 rounded-[24px] font-black uppercase text-xs tracking-widest gap-3 shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all relative z-10">
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            {t("common.save")}
+            {lang === "ar" ? "تحديث القنوات" : "Commit Channels"}
           </Button>
+          <div className="absolute top-[-20%] right-[-10%] w-[35%] h-[150%] bg-primary/5 rotate-12 blur-[120px] pointer-events-none" />
         </div>
 
-        {/* WhatsApp */}
-        <div className="rounded-xl border border-border bg-card p-5 space-y-3">
-          <h2 className="flex items-center gap-2 font-semibold text-card-foreground">
-            <MessageCircle className="h-5 w-5 text-accent" />
-            {lang === "ar" ? "رقم واتساب التواصل" : "WhatsApp Contact Number"}
-          </h2>
-          <Input value={whatsapp} onChange={e => setWhatsapp(e.target.value)} placeholder="967700000099" dir="ltr" className="max-w-xs" />
-          <p className="text-xs text-muted-foreground">{lang === "ar" ? "سيظهر هذا الرقم لأصحاب المنشآت للتواصل" : "This number will be shown to owners for contact"}</p>
-        </div>
+        {isLoading ? (
+          <StatsSkeleton />
+        ) : (
+          <div className="grid gap-8">
+            {/* Communication Hub Block */}
+            <div className="bg-card/60 backdrop-blur-sm p-10 rounded-[40px] border border-border/50 shadow-sm space-y-10">
+              <div className="flex items-center gap-3 border-b border-border/30 pb-6">
+                <Share2 className="h-6 w-6 text-primary" />
+                <h2 className="text-xl font-black tracking-tight uppercase">{lang === "ar" ? "مركز الاتصال" : "Communication Hub"}</h2>
+              </div>
+              
+              <div className="grid gap-10 sm:grid-cols-2">
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60 flex items-center gap-2">
+                    <Phone className="h-3 w-3" />
+                    {lang === "ar" ? "رقم الهاتف الرسمي" : "Official Hotline"}
+                  </label>
+                  <Input 
+                    value={phone} 
+                    onChange={e => setPhone(e.target.value)} 
+                    placeholder="+966..." 
+                    dir="ltr"
+                    className="h-14 rounded-2xl bg-white/50 border-border/50 focus:ring-primary/20 font-black transition-all"
+                  />
+                </div>
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60 flex items-center gap-2">
+                    <Mail className="h-3 w-3" />
+                    {lang === "ar" ? "البريد الإلكتروني" : "Corporate Email"}
+                  </label>
+                  <Input 
+                    value={email} 
+                    onChange={e => setEmail(e.target.value)} 
+                    placeholder="support@example.com" 
+                    dir="ltr"
+                    className="h-14 rounded-2xl bg-white/50 border-border/50 focus:ring-primary/20 font-black transition-all"
+                  />
+                </div>
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60 flex items-center gap-2 text-emerald-600">
+                    <MessageSquare className="h-3 w-3" />
+                    {lang === "ar" ? "رابط الواتساب" : "Direct WhatsApp Link"}
+                  </label>
+                  <Input 
+                    value={whatsapp} 
+                    onChange={e => setWhatsapp(e.target.value)} 
+                    placeholder="https://wa.me/..." 
+                    dir="ltr"
+                    className="h-14 rounded-2xl bg-white/50 border-border/50 focus:ring-primary/20 font-black transition-all"
+                  />
+                </div>
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60 flex items-center gap-2 text-blue-500">
+                    <Send className="h-3 w-3" />
+                    {lang === "ar" ? "رابط التليجرام" : "Direct Telegram Link"}
+                  </label>
+                  <Input 
+                    value={telegram} 
+                    onChange={e => setTelegram(e.target.value)} 
+                    placeholder="https://t.me/..." 
+                    dir="ltr"
+                    className="h-14 rounded-2xl bg-white/50 border-border/50 focus:ring-primary/20 font-black transition-all"
+                  />
+                </div>
+              </div>
 
-        {/* Contact Info */}
-        <div className="rounded-xl border border-border bg-card p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="flex items-center gap-2 font-semibold text-card-foreground">
-              <Phone className="h-5 w-5 text-primary" />
-              {lang === "ar" ? "معلومات التواصل (صفحة تواصل معنا)" : "Contact Info (Contact Us Page)"}
-            </h2>
-            <Button size="sm" variant="outline" onClick={addContact} className="gap-1.5 text-xs">
-              <Plus className="h-3.5 w-3.5" /> {t("common.add")}
-            </Button>
-          </div>
-          {contacts.map((c, i) => (
-            <div key={i} className="rounded-lg border border-border p-4 space-y-3 relative">
-              <Button size="icon" variant="ghost" onClick={() => removeContact(i)}
-                className="absolute top-2 end-2 h-7 w-7 text-muted-foreground hover:text-destructive">
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs text-muted-foreground">{lang === "ar" ? "النوع" : "Type"}</label>
-                  <select value={c.type} onChange={e => updateContact(i, "type", e.target.value)}
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                    {contactTypes.map(ct => (<option key={ct.value} value={ct.value}>{ct.label}</option>))}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground">{lang === "ar" ? "القيمة" : "Value"}</label>
-                  <Input value={c.value} onChange={e => updateContact(i, "value", e.target.value)} dir="ltr" placeholder={c.type === "email" ? "email@example.com" : "+967..."} />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs text-muted-foreground">{lang === "ar" ? "التسمية (عربي)" : "Label (AR)"}</label>
-                  <Input value={c.label_ar} onChange={e => updateContact(i, "label_ar", e.target.value)} />
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground">{lang === "ar" ? "التسمية (إنجليزي)" : "Label (EN)"}</label>
-                  <Input value={c.label_en} onChange={e => updateContact(i, "label_en", e.target.value)} />
-                </div>
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground">{lang === "ar" ? "الرابط (اختياري)" : "Link (optional)"}</label>
-                <Input value={c.href} onChange={e => updateContact(i, "href", e.target.value)} dir="ltr" placeholder="https://wa.me/967..." />
+              <div className="p-8 rounded-[32px] bg-primary/5 border border-primary/10 flex items-center gap-6">
+                  <div className="h-14 w-14 rounded-[20px] bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      <Globe className="h-7 w-7" />
+                  </div>
+                  <p className="text-[11px] font-medium text-muted-foreground leading-relaxed max-w-sm">
+                      {lang === "ar" ? "سيتم عرض قنوات التواصل هذه لمالكي المنشآت والزبائن في صفحة الدعم الفني داخل التطبيق." : "Strategic Logistics: All orchestrated support channels will be surfaced to business owners and clients through the in-app help desk terminals."}
+                  </p>
               </div>
             </div>
-          ))}
-          {contacts.length === 0 && <p className="text-xs text-muted-foreground text-center py-3">{lang === "ar" ? "لم تتم إضافة معلومات تواصل" : "No contact info added"}</p>}
-        </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

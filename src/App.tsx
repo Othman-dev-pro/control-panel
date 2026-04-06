@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminOwners from "./pages/AdminOwners";
+import AdminOwnerDetails from "./pages/AdminOwnerDetails";
 import AdminSubscriptions from "./pages/AdminSubscriptions";
 import AdminPlans from "./pages/AdminPlans";
 import AdminTrials from "./pages/AdminTrials";
@@ -19,6 +20,8 @@ import AdminBranding from "./pages/AdminBranding";
 import AdminContact from "./pages/AdminContact";
 import AdminPaymentAccounts from "./pages/AdminPaymentAccounts";
 import AdminTexts from "./pages/AdminTexts";
+import AdminBackup from "./pages/AdminBackup";
+import AdminRequests from "./pages/AdminRequests";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +43,7 @@ const App = () => (
               <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
               <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={["super_admin"]}><AdminDashboard /></ProtectedRoute>} />
               <Route path="/admin/owners" element={<ProtectedRoute allowedRoles={["super_admin"]}><AdminOwners /></ProtectedRoute>} />
+              <Route path="/admin/owners/:id" element={<ProtectedRoute allowedRoles={["super_admin"]}><AdminOwnerDetails /></ProtectedRoute>} />
               <Route path="/admin/subscriptions" element={<ProtectedRoute allowedRoles={["super_admin"]}><AdminSubscriptions /></ProtectedRoute>} />
               <Route path="/admin/plans" element={<ProtectedRoute allowedRoles={["super_admin"]}><AdminPlans /></ProtectedRoute>} />
               <Route path="/admin/trials" element={<ProtectedRoute allowedRoles={["super_admin"]}><AdminTrials /></ProtectedRoute>} />
@@ -49,6 +53,8 @@ const App = () => (
               <Route path="/admin/contact" element={<ProtectedRoute allowedRoles={["super_admin"]}><AdminContact /></ProtectedRoute>} />
               <Route path="/admin/payment-accounts" element={<ProtectedRoute allowedRoles={["super_admin"]}><AdminPaymentAccounts /></ProtectedRoute>} />
               <Route path="/admin/texts" element={<ProtectedRoute allowedRoles={["super_admin"]}><AdminTexts /></ProtectedRoute>} />
+              <Route path="/admin/backup" element={<ProtectedRoute allowedRoles={["super_admin"]}><AdminBackup /></ProtectedRoute>} />
+              <Route path="/admin/requests" element={<ProtectedRoute allowedRoles={["super_admin"]}><AdminRequests /></ProtectedRoute>} />
 
               <Route path="*" element={<NotFound />} />
             </Routes>
