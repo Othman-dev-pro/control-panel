@@ -113,7 +113,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="border-t border-sidebar-border p-3">
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-sidebar-primary to-blue-500 text-sm font-semibold text-white">
-              {user.name.charAt(0) || "A"}
+              {user?.name?.charAt(0) || "A"}
             </div>
             <div className="flex-1 truncate">
               <p className="truncate text-sm font-medium text-sidebar-foreground">{user.name}</p>
