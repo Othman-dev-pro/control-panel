@@ -1,0 +1,131 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-sans: 'Plus Jakarta Sans', 'IBM Plex Sans Arabic', system-ui, -apple-system, sans-serif;
+    --font-arabic: 'IBM Plex Sans Arabic', 'Plus Jakarta Sans', system-ui, sans-serif;
+
+    --background: 210 20% 98%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 217 91% 53%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 245 82% 58%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 160 84% 39%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 217 91% 53%;
+
+    --radius: 0.75rem;
+
+    --status-trial: 45 93% 47%;
+    --status-active: 160 84% 39%;
+    --status-expired: 0 84% 60%;
+
+    --sidebar-background: 222 47% 11%;
+    --sidebar-foreground: 213 31% 91%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 222 47% 16%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 222 47% 18%;
+    --sidebar-ring: 217 91% 53%;
+    --sidebar-muted: 215 16% 57%;
+  }
+
+  .dark {
+    --background: 222 47% 6%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 245 82% 65%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 160 84% 45%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 217 91% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+  }
+  [dir="rtl"] body {
+    font-family: var(--font-arabic);
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold tracking-tight;
+  }
+}
+
+@layer utilities {
+  .glass-card {
+    @apply bg-card/80 backdrop-blur-sm border border-border shadow-sm rounded-xl;
+  }
+  .status-trial {
+    background-color: hsl(var(--status-trial) / 0.1);
+    color: hsl(var(--status-trial));
+    border: 1px solid hsl(var(--status-trial) / 0.3);
+  }
+  .status-active {
+    background-color: hsl(var(--status-active) / 0.1);
+    color: hsl(var(--status-active));
+    border: 1px solid hsl(var(--status-active) / 0.3);
+  }
+  .status-expired {
+    background-color: hsl(var(--status-expired) / 0.1);
+    color: hsl(var(--status-expired));
+    border: 1px solid hsl(var(--status-expired) / 0.3);
+  }
+
+  /* Hide number input spinners */
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+    line-height: 1.25rem;
+    direction: ltr;
+    text-align: left;
+    font-family: var(--font-sans);
+    font-variant-numeric: tabular-nums;
+  }
+}
