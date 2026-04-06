@@ -1,7 +1,7 @@
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAdminStats, useAdminOwners } from "@/hooks/useAdminData";
 import DashboardLayout from "@/components/DashboardLayout";
-import { Users, Crown, CreditCard, TrendingUp, BarChart3, ArrowRight, Wallet, History, Activity, Sparkles } from "lucide-react";
+import { Users, Crown, CreditCard, TrendingUp, BarChart3, ArrowRight, Wallet, History, Activity, Sparkles, ChevronRight } from "lucide-react";
 import { StatsSkeleton, TableSkeleton } from "@/components/SkeletonLoader";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";

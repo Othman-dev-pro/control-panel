@@ -116,7 +116,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               {user?.name?.charAt(0) || "A"}
             </div>
             <div className="flex-1 truncate">
-              <p className="truncate text-sm font-medium text-sidebar-foreground">{user.name}</p>
+              <p className="truncate text-sm font-medium text-sidebar-foreground">{user?.name || "Admin"}</p>
             </div>
             <button onClick={handleLogout} className="text-sidebar-muted hover:text-sidebar-foreground transition-colors" title="Logout">
               <LogOut className="h-4 w-4" />
