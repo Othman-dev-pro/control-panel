@@ -6,41 +6,47 @@ export function useAdminOwners(page = 1, pageSize = 12) {
   return useQuery({
     queryKey: ["admin-owners", page, pageSize],
     queryFn: async () => {
-      // 1. Try to fetch with RPC first (using standard parameter naming)
+      // 1. Try to fetch with RPC first (calculated securely in DB)
       const { data, error } = await supabase.rpc("get_admin_owners_stats", {
         p_limit: pageSize,
-        p_offset: (page - 1) * pageSize,
-        page_size: pageSize,   // including both styles to be safe
-        page_number: page
+        p_offset: (page - 1) * pageSize
       });
       
-      let finalData = data;
-      
-      // 2. Fallback to direct profiles fetch if RPC fails
-      if (error || !data || data.length === 0) {
-        console.warn("RPC failed, falling back to direct profiles fetch...");
-        const { data: directData, error: directError } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("role", "owner")
-          .order("created_at", { ascending: false });
-        
-        if (directError) throw directError;
-        finalData = directData;
+      if (!error && data) {
+        return data.map((p: any) => ({
+          ...p,
+          subscription_status: getEffectiveStatus(p),
+          stats: {
+            customersCount: Number(p.customers_count || 0),
+            totalDebts: Number(p.total_debts || 0),
+            totalPayments: Number(p.total_payments || 0),
+            remainingBalance: Number(p.remaining_balance || 0)
+          }
+        }));
       }
 
-      return (finalData || []).map((p: any) => ({
+      // 2. Fallback to direct profiles if RPC fails (will show 0 stats but won't crash)
+      console.warn("Stats RPC failed, falling back to basic display. Make sure to run the SQL script.");
+      const { data: directData, error: directError } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("role", "owner")
+        .order("created_at", { ascending: false });
+      
+      if (directError) throw directError;
+
+      return (directData || []).map((p: any) => ({
         ...p,
         subscription_status: getEffectiveStatus(p),
         stats: {
-          customersCount: Number(p.customers_count || 0),
-          totalDebts: Number(p.total_debts || 0),
-          totalPayments: Number(p.total_payments || 0),
-          remainingBalance: Number(p.remaining_balance || (p.total_debts - p.total_payments) || 0)
+          customersCount: 0,
+          totalDebts: 0,
+          totalPayments: 0,
+          remainingBalance: 0
         }
-      })).filter(p => p !== null);
+      }));
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes cache
+    staleTime: 1000 * 60 * 5, 
   });
 }
 
