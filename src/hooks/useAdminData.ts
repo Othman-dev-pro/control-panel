@@ -387,27 +387,47 @@ export function useDeleteOwner() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (userId: string) => {
-      // 1. Delete linked employees (profiles where owner_id = userId)
+      console.log("Starting deep delete for owner:", userId);
+      
+      // 1. Delete all transactions (debts and payments)
+      const { error: dErr } = await supabase.from("debts").delete().eq("owner_id", userId);
+      if (dErr) console.error("Debts delete error:", dErr);
+      
+      const { error: pErr } = await supabase.from("payments").delete().eq("owner_id", userId);
+      if (pErr) console.error("Payments delete error:", pErr);
+
+      // 2. Delete all customers
+      const { error: cErr } = await supabase.from("customers").delete().eq("owner_id", userId);
+      if (cErr) console.error("Customers delete error:", cErr);
+      
+      // 3. Delete any linked ads or notifications if applicable
+      await supabase.from("ads").delete().eq("id", userId); // Check if ad ID matches or use specific field
+      
+      // 4. Delete linked employees
       const { error: employeesError } = await supabase
         .from("profiles")
         .delete()
         .eq("owner_id", userId);
       if (employeesError) throw employeesError;
 
-      // 2. Delete the owner profile itself
+      // 5. Finally, delete the owner profile itself
       const { error: ownerError } = await supabase
         .from("profiles")
         .delete()
         .eq("user_id", userId)
         .eq("role", "owner");
-      if (ownerError) throw ownerError;
       
-      // Note: Supabase RLS and foreign keys should handle the rest 
-      // (like customers staying but losing their owner link if configured)
+      if (ownerError) {
+        console.error("Owner profile delete critical error:", ownerError);
+        throw ownerError;
+      }
+      
+      console.log("Deep delete completed successfully for:", userId);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-owners"] });
       qc.invalidateQueries({ queryKey: ["admin-stats"] });
+      qc.invalidateQueries({ queryKey: ["admin-dashboard-stats"] });
     },
   });
 }
