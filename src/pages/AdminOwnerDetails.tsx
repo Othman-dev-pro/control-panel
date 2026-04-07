@@ -5,8 +5,10 @@ import {
   useCustomerTransactions, 
   useAdminOwners, 
   useDeleteOwner,
-  useOwnerTransactions
+  useOwnerTransactions,
+  useExportOwnerData
 } from "@/hooks/useAdminData";
+import { exportOwnerDataToExcel, exportOwnerDataToCSV } from "@/utils/exportUtils";
 import DashboardLayout from "@/components/DashboardLayout";
 import { 
   Users, 
@@ -29,8 +31,19 @@ import {
   Trash2,
   AlertTriangle,
   Clock,
-  Calendar
+  Calendar,
+  FileSpreadsheet,
+  FileCode,
+  Loader2
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,6 +71,7 @@ export default function AdminOwnerDetails() {
   const { data: customers = [], isLoading: customersLoading } = useOwnerCustomers(id || "");
   const { data: allOwnerTransactions = [] } = useOwnerTransactions(id || "");
   const deleteOwner = useDeleteOwner();
+  const exportData = useExportOwnerData();
   
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -110,19 +124,23 @@ export default function AdminOwnerDetails() {
     return result;
   }, [transactions, typeFilter, timeFilter, customStart, customEnd]);
 
-  const handleExportData = () => {
-    if (!owner) return;
-    const exportData = allOwnerTransactions.map(tx => ({
-      [lang === "ar" ? "التاريخ" : "Date"]: new Date(tx.created_at).toLocaleDateString(),
-      [lang === "ar" ? "الوقت" : "Time"]: new Date(tx.created_at).toLocaleTimeString(),
-      [lang === "ar" ? "الزبون" : "Customer"]: tx.customer_name,
-      [lang === "ar" ? "النوع" : "Type"]: tx.type === "debt" ? (lang === "ar" ? "دين" : "Debt") : (lang === "ar" ? "سداد" : "Payment"),
-      [lang === "ar" ? "المبلغ" : "Amount"]: tx.amount,
-      [lang === "ar" ? "الوصف" : "Description"]: tx.description || ""
-    }));
-    
-    exportToCSV(`${owner.business_name || "Business"}_Backup.csv`, exportData);
-    toast({ title: lang === "ar" ? "تم التصدير" : "Exported", description: lang === "ar" ? "تم تصدير نسخة احتياطية للبيانات بنجاح" : "Data backup exported successfully" });
+  const handleExport = async (format: 'excel' | 'csv') => {
+    if (!owner || !id) return;
+    try {
+      toast({ title: lang === "ar" ? "جاري تحضير النسخة الاحتياطية..." : "Preparing backup..." });
+      const data = await exportData.mutateAsync({ ownerId: id, businessName: owner.business_name || owner.name });
+      
+      if (format === 'excel') {
+        exportOwnerDataToExcel(data, owner.business_name || owner.name);
+      } else {
+        exportOwnerDataToCSV(data, owner.business_name || owner.name);
+      }
+
+      toast({ title: t("common.success"), description: lang === "ar" ? "تم التصدير بنجاح" : "Exported successfully" });
+    } catch (err) {
+      console.error("Export error:", err);
+      toast({ variant: "destructive", title: t("common.error") });
+    }
   };
 
   const handleDeleteBusiness = async () => {
@@ -169,10 +187,36 @@ export default function AdminOwnerDetails() {
           </div>
           
           <div className="flex items-center gap-3 relative z-10">
-            <Button onClick={handleExportData} variant="outline" className="h-12 px-6 rounded-[20px] font-black uppercase text-[10px] tracking-widest border-emerald-500/20 text-emerald-600 bg-emerald-500/5 hover:bg-emerald-500/10 gap-2">
-              <Download className="h-4 w-4" />
-              {lang === "ar" ? "تصدير البيانات" : "Export Backup"}
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button disabled={exportData.isPending} variant="outline" className="h-12 px-6 rounded-[20px] font-black uppercase text-[10px] tracking-widest border-emerald-500/20 text-emerald-600 bg-emerald-500/5 hover:bg-emerald-500/10 gap-2">
+                  {exportData.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                  {lang === "ar" ? "تصدير البيانات" : "Export Backup"}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64 rounded-[24px] border-border bg-card/95 backdrop-blur-md p-2 shadow-2xl">
+                <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-4 py-2 opacity-50">
+                  {lang === "ar" ? "صيغة التصدير" : "Export Format"}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-border/30" />
+                
+                <DropdownMenuItem 
+                  onClick={() => handleExport('excel')}
+                  className="rounded-xl px-4 py-2.5 cursor-pointer focus:bg-emerald-50 focus:text-emerald-600 transition-colors font-bold text-xs"
+                >
+                  <FileSpreadsheet className="h-4 w-4 me-2" />
+                  <span>{lang === "ar" ? "تصدير نسخة إكسل (Excel)" : "Export to Excel"}</span>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem 
+                  onClick={() => handleExport('csv')}
+                  className="rounded-xl px-4 py-2.5 cursor-pointer focus:bg-blue-50 focus:text-blue-600 transition-colors font-bold text-xs"
+                >
+                  <FileCode className="h-4 w-4 me-2" />
+                  <span>{lang === "ar" ? "تصدير نسخة CSV" : "Export to CSV"}</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
               <DialogTrigger asChild>
