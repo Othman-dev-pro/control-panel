@@ -129,7 +129,7 @@ export default function AdminTrials() {
                 <tbody className="divide-y divide-border/30">
                   {trialOwners.map((o: any) => {
                     const daysLeft = o.trial_ends_at
-                      ? Math.max(0, Math.ceil((new Date(o.trial_ends_at).getTime() - Date.now()) / 86400000))
+                      ? Math.max(0, Math.ceil((new Date(o.trial_ends_at).setHours(0,0,0,0) - new Date().setHours(0,0,0,0)) / 86400000))
                       : 0;
                     return (
                       <tr key={o.id} className="hover:bg-primary/[0.02] transition-colors group">
@@ -179,7 +179,7 @@ export default function AdminTrials() {
                               />
                               <Button
                                 size="sm"
-                                variant="primary"
+                                variant="default"
                                 className="h-9 px-4 text-[10px] font-black uppercase rounded-lg group/btn gap-2"
                                 onClick={() => handleUpdateTrial(o.user_id)}
                                 disabled={updateTrialDays.isPending || !trialDaysInput[o.user_id]}

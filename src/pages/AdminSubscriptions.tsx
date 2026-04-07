@@ -155,7 +155,7 @@ export default function AdminSubscriptions() {
                     const endDate = o.subscription_ends_at || o.trial_ends_at;
                     const now = new Date();
                     const end = endDate ? new Date(endDate) : null;
-                    const daysLeft = end ? Math.max(0, Math.ceil((end.getTime() - now.getTime()) / 86400000)) : 0;
+                    const daysLeft = end ? Math.max(0, Math.ceil((new Date(end).setHours(0,0,0,0) - new Date().setHours(0,0,0,0)) / 86400000)) : 0;
                     const canResume = o.subscription_status === "expired" && end && end > now;
 
                     return (
@@ -211,7 +211,7 @@ export default function AdminSubscriptions() {
                               />
                               <Button
                                 size="sm"
-                                variant="primary"
+                                variant="default"
                                 className="h-9 px-3 text-[10px] font-black uppercase rounded-lg group/btn"
                                 onClick={() => handleActivate(o.user_id, parseInt(customDays[o.user_id] || "0"))}
                                 disabled={activateSubscription.isPending || !customDays[o.user_id]}

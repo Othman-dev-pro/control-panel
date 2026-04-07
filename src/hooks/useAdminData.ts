@@ -10,6 +10,9 @@ export function useAdminOwners(page = 1, pageSize = 12) {
   return useQuery({
     queryKey: ["admin-owners", page, pageSize],
     queryFn: async () => {
+      // Auto-trigger the update for expired subscriptions before fetching
+      await supabase.rpc("update_expired_subscriptions");
+      
       const { data, error } = await supabase.rpc("get_admin_owners_stats" as any, {
         p_limit: pageSize,
         p_offset: (page - 1) * pageSize
