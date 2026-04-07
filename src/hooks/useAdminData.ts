@@ -387,33 +387,34 @@ export function useDeleteOwner() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (userId: string) => {
-      console.log("Starting deep delete for owner:", userId);
+      console.log("Starting ULTIMATE deep delete for owner:", userId);
       
-      // 1. Delete all transactions (debts and payments)
-      const { error: dErr } = await supabase.from("debts").delete().eq("owner_id", userId);
-      if (dErr) console.error("Debts delete error:", dErr);
+      // 1. Clean up all peripheral tables linked to this owner
+      const tables = ["employee_permissions", "debts", "payments", "customers", "notifications", "fcm_tokens", "otp_codes"];
+      for (const table of tables) {
+        try {
+          const { error } = await supabase.from(table).delete().eq("owner_id", userId);
+          if (error) console.warn(`Clean up warning for ${table}:`, error.message);
+        } catch (e) {
+          console.error(`Clean up failed for ${table}:`, e);
+        }
+      }
       
-      const { error: pErr } = await supabase.from("payments").delete().eq("owner_id", userId);
-      if (pErr) console.error("Payments delete error:", pErr);
-
-      // 2. Delete all customers
-      const { error: cErr } = await supabase.from("customers").delete().eq("owner_id", userId);
-      if (cErr) console.error("Customers delete error:", cErr);
+      // 2. Delete linked user roles
+      await supabase.from("user_roles").delete().eq("user_id", userId);
       
-      // 3. Delete any linked ads or notifications if applicable
-      await supabase.from("ads").delete().eq("id", userId); // Check if ad ID matches or use specific field
-      
-      // 4. Delete linked employees
+      // 3. Delete linked employees profiles
       const { error: employeesError } = await supabase
         .from("profiles")
         .delete()
         .eq("owner_id", userId);
       if (employeesError) throw employeesError;
 
-      // 5. Finally, delete the owner profile itself
-      const { error: ownerError } = await supabase
+      // 4. Finally, delete the owner profile itself and VERIFY row count
+      // We use { count: 'exact' } to make sure something actually happened
+      const { error: ownerError, count } = await supabase
         .from("profiles")
-        .delete()
+        .delete({ count: 'exact' })
         .eq("user_id", userId)
         .eq("role", "owner");
       
@@ -421,13 +422,19 @@ export function useDeleteOwner() {
         console.error("Owner profile delete critical error:", ownerError);
         throw ownerError;
       }
+
+      if (count === 0) {
+        console.error("No profile found to delete for ID:", userId);
+        throw new Error("لم يتم العثور على المنشأة في قاعدة البيانات لحذفها. قد يكون الرقم التعريفي غير صحيح.");
+      }
       
-      console.log("Deep delete completed successfully for:", userId);
+      console.log(`ULTIMATE delete completed. Rows affected: ${count}`);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-owners"] });
       qc.invalidateQueries({ queryKey: ["admin-stats"] });
       qc.invalidateQueries({ queryKey: ["admin-dashboard-stats"] });
+      qc.invalidateQueries({ queryKey: ["admin-plans"] });
     },
   });
 }
