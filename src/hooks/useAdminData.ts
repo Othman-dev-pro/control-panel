@@ -48,7 +48,8 @@ export function useAdminOwners(page = 1, pageSize = 12) {
         }
       }));
     },
-    staleTime: 1000 * 60 * 5, 
+    refetchInterval: 1000 * 60, // Refresh in background every minute
+    staleTime: 1000 * 30, // Data becomes stale after 30 seconds
   });
 }
 
@@ -147,7 +148,8 @@ export function useAdminStats() {
 
       return stats;
     },
-    staleTime: 1000 * 60 * 10, // 10 minutes cache for global stats
+    refetchInterval: 1000 * 60, // Refresh in background every minute
+    staleTime: 1000 * 30, // Data becomes stale after 30 seconds
   });
 }
 
