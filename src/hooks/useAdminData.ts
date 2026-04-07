@@ -15,7 +15,7 @@ export function useAdminOwners(page = 1, pageSize = 12) {
       if (!error && data) {
         return data.map((p: any) => ({
           ...p,
-          subscription_status: getEffectiveStatus(p),
+          subscription_status: p.subscription_status,
           stats: {
             customersCount: Number(p.customers_count || 0),
             totalDebts: Number(p.total_debts || 0),
@@ -37,7 +37,7 @@ export function useAdminOwners(page = 1, pageSize = 12) {
 
       return (directData || []).map((p: any) => ({
         ...p,
-        subscription_status: getEffectiveStatus(p),
+        subscription_status: p.subscription_status,
         stats: {
           customersCount: 0,
           totalDebts: 0,
