@@ -51,9 +51,9 @@ export default function Index() {
   };
 
   return (
-    <div className={`min-h-screen bg-background text-foreground font-sans selection:bg-primary/20 overflow-x-hidden transition-colors duration-500`} dir={dir}>
+    <div className={`min-h-screen bg-background text-foreground font-['Cairo'] selection:bg-primary/20 overflow-x-hidden transition-colors duration-500`} dir={dir}>
       {/* Navigation */}
-      <nav className="fixed top-0 w-full z-50 bg-background/70 backdrop-blur-xl border-b border-border/50">
+      <nav className="fixed top-0 w-full z-50 bg-background/70 backdrop-blur-xl border-b border-border/50 font-['Cairo']">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="h-10 w-10 bg-white dark:bg-slate-900 rounded-xl flex items-center justify-center shadow-lg shadow-primary/10 overflow-hidden border border-border/50">
@@ -162,7 +162,7 @@ export default function Index() {
               className="relative"
             >
               <div className="relative z-10 rounded-[2.5rem] overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] border-8 border-card bg-card group">
-                <img src="/deyoni_hero_mockup_1775605107383.png" alt="Mockup" className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-700" />
+                <img src="/clean-mockup.png" alt="Deyoni App Interface" className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-700" />
               </div>
               {/* Floating Card */}
               <div className="absolute -bottom-10 -right-10 bg-card/80 backdrop-blur-xl p-6 rounded-3xl shadow-xl shadow-primary/5 border border-border/50 max-w-[200px] hidden sm:block animate-pulse duration-[4000ms]">
