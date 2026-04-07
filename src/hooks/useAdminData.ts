@@ -390,10 +390,25 @@ export function useDeleteOwner() {
       console.log("Starting ULTIMATE deep delete for owner:", userId);
       
       // 1. Clean up all peripheral tables linked to this owner
-      const tables = ["employee_permissions", "debts", "payments", "customers", "notifications", "fcm_tokens", "otp_codes"];
+      // CRITICAL: The order matters due to Foreign Keys!
+      // - payments depend on debts and customers
+      // - orders depend on customers
+      // - debts depend on customers
+      // So delete order MUST BE: payments -> orders -> debts -> customers
+      const tables = [
+        "employee_permissions", 
+        "notifications", 
+        "fcm_tokens", 
+        "otp_codes",
+        "payments",     // Child of debts & customers
+        "orders",       // Child of customers
+        "debts",        // Child of customers
+        "customers"     // Parent
+      ];
+      
       for (const table of tables) {
         try {
-          const { error } = await supabase.from(table).delete().eq("owner_id", userId);
+          const { error } = await supabase.from(table as any).delete().eq("owner_id", userId);
           if (error) console.warn(`Clean up warning for ${table}:`, error.message);
         } catch (e) {
           console.error(`Clean up failed for ${table}:`, e);
