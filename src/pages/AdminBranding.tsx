@@ -6,7 +6,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Shield, Loader2, Save, Upload, Image as ImageIcon, Sparkles, Layout, Globe } from "lucide-react";
+import { Shield, Loader2, Save, Upload, Image as ImageIcon, Sparkles, Layout, Globe, Smartphone } from "lucide-react";
 import { StatsSkeleton } from "@/components/SkeletonLoader";
 
 export default function AdminBranding() {
@@ -18,14 +18,18 @@ export default function AdminBranding() {
   const [appNameAr, setAppNameAr] = useState("");
   const [appNameEn, setAppNameEn] = useState("");
   const [appIcon, setAppIcon] = useState("");
+  const [playStoreUrl, setPlayStoreUrl] = useState("");
+  const [appStoreUrl, setAppStoreUrl] = useState("");
   const [saving, setSaving] = useState(false);
   const [uploadingIcon, setUploadingIcon] = useState(false);
 
   useEffect(() => {
     if (settings) {
-      setAppNameAr(settings["app_name_ar"] || "ديبت فلو");
-      setAppNameEn(settings["app_name_en"] || "DebtFlow");
+      setAppNameAr(settings["app_name_ar"] || "ديوني");
+      setAppNameEn(settings["app_name_en"] || "Deyoni");
       setAppIcon(settings["app_icon_url"] || "");
+      setPlayStoreUrl(settings["play_store_url"] || "");
+      setAppStoreUrl(settings["app_store_url"] || "");
     }
   }, [settings]);
 
@@ -35,6 +39,8 @@ export default function AdminBranding() {
       await Promise.all([
         updateSetting.mutateAsync({ key: "app_name_ar", value: appNameAr }),
         updateSetting.mutateAsync({ key: "app_name_en", value: appNameEn }),
+        updateSetting.mutateAsync({ key: "play_store_url", value: playStoreUrl }),
+        updateSetting.mutateAsync({ key: "app_store_url", value: appStoreUrl }),
         ...(appIcon ? [updateSetting.mutateAsync({ key: "app_icon_url", value: appIcon })] : []),
       ]);
       toast({ title: t("common.success"), description: t("settings.saved") });
@@ -146,12 +152,11 @@ export default function AdminBranding() {
                     <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60">
                         {lang === "ar" ? "الاسم بالعربية" : "Arabic Localization"}
                     </label>
-                    <span className="text-[8px] font-black text-primary bg-primary/5 px-2 py-0.5 rounded uppercase tracking-widest font-mono">AR_GLOBAL</span>
                   </div>
                   <Input 
                     value={appNameAr} 
                     onChange={e => setAppNameAr(e.target.value)} 
-                    placeholder="ديبت فلو" 
+                    placeholder="ديوني" 
                     className="h-14 rounded-2xl bg-white/50 border-border/50 focus:ring-primary/20 font-black transition-all"
                   />
                 </div>
@@ -160,24 +165,58 @@ export default function AdminBranding() {
                     <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60">
                         {lang === "ar" ? "الاسم بالإنجليزية" : "English Localization"}
                     </label>
-                    <span className="text-[8px] font-black text-primary bg-primary/5 px-2 py-0.5 rounded uppercase tracking-widest font-mono">EN_GLOBAL</span>
                   </div>
                   <Input 
                     value={appNameEn} 
                     onChange={e => setAppNameEn(e.target.value)} 
-                    placeholder="DebtFlow" 
+                    placeholder="Deyoni" 
                     dir="ltr"
                     className="h-14 rounded-2xl bg-white/50 border-border/50 focus:ring-primary/20 font-black tracking-tight transition-all"
                   />
                 </div>
               </div>
+            </div>
+
+            {/* Mobile Store Links Block */}
+            <div className="bg-card/60 backdrop-blur-sm p-10 rounded-[40px] border border-border/50 shadow-sm space-y-10">
+              <div className="flex items-center gap-3 border-b border-border/30 pb-6">
+                <Smartphone className="h-6 w-6 text-primary" />
+                <h2 className="text-xl font-black tracking-tight uppercase">{lang === "ar" ? "روابط المتاجر" : "Mobile Store Links"}</h2>
+              </div>
               
+              <div className="grid gap-10 sm:grid-cols-2">
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60">
+                      {lang === "ar" ? "رابط جوجل بلاي (Android)" : "Google Play Link"}
+                  </label>
+                  <Input 
+                    value={playStoreUrl} 
+                    onChange={e => setPlayStoreUrl(e.target.value)} 
+                    placeholder="https://play.google.com/store/apps/details?id=..." 
+                    dir="ltr"
+                    className="h-14 rounded-2xl bg-white/50 border-border/50 focus:ring-primary/20 font-medium transition-all"
+                  />
+                </div>
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60">
+                      {lang === "ar" ? "رابط آب ستور (iOS)" : "App Store Link"}
+                  </label>
+                  <Input 
+                    value={appStoreUrl} 
+                    onChange={e => setAppStoreUrl(e.target.value)} 
+                    placeholder="https://apps.apple.com/app/..." 
+                    dir="ltr"
+                    className="h-14 rounded-2xl bg-white/50 border-border/50 focus:ring-primary/20 font-medium transition-all"
+                  />
+                </div>
+              </div>
+
               <div className="p-6 rounded-[24px] bg-muted/30 border border-dashed border-border/50 flex items-start gap-4">
                   <div className="h-8 w-8 rounded-xl bg-muted/50 flex items-center justify-center shrink-0">
                       <Layout className="h-4 w-4 text-muted-foreground opacity-40" />
                   </div>
                   <p className="text-[11px] font-medium text-muted-foreground leading-relaxed italic">
-                      {lang === "ar" ? "ملاحظة: سيتم تحديث تسمية المنصة وهوية العلامة التجارية تلقائياً في كافة واجهات النظام ولوحة التحكم فور حفظ التغييرات." : "Strategic Note: Platform naming and brand identity will be automatically propagated across all system interfaces and dashboards upon save."}
+                      {lang === "ar" ? "ملاحظة: سيتم تحديث روابط التحميل في الصفحة التعريفية للموقع تلقائياً فور حفظ التغييرات." : "Strategic Note: App Store redirection links will be automatically propagated to the public Landing Page upon save."}
                   </p>
               </div>
             </div>
