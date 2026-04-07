@@ -389,24 +389,18 @@ export function useDeleteOwner() {
     mutationFn: async (userId: string) => {
       console.log("Starting ULTIMATE deep delete for owner:", userId);
       
-      // 1. Clean up all peripheral tables linked to this owner
-      // CRITICAL: The order matters due to Foreign Keys!
-      // - payments depend on debts and customers
-      // - orders depend on customers
-      // - debts depend on customers
-      // So delete order MUST BE: payments -> orders -> debts -> customers
-      const tables = [
-        "employee_permissions", 
-        "notifications", 
-        "fcm_tokens", 
-        "otp_codes",
-        "payments",     // Child of debts & customers
-        "orders",       // Child of customers
-        "debts",        // Child of customers
-        "customers"     // Parent
+      // 1. Clean up peripheral tables using owner_id (Business context)
+      // ORDER MATTERS: Children first, then parents
+      const ownerTables = [
+        "payments",          // Child of debts & customers
+        "orders",            // Child of customers
+        "debts",             // Child of customers
+        "customers",         // Parent of debts/payments
+        "employee_permissions",
+        "payment_methods"
       ];
-      
-      for (const table of tables) {
+
+      for (const table of ownerTables) {
         try {
           const { error } = await supabase.from(table as any).delete().eq("owner_id", userId);
           if (error) console.warn(`Clean up warning for ${table}:`, error.message);
@@ -414,16 +408,32 @@ export function useDeleteOwner() {
           console.error(`Clean up failed for ${table}:`, e);
         }
       }
+
+      // 2. Clean up tables using user_id (User account context)
+      const userTables = [
+        "notifications",
+        "fcm_tokens",
+        "user_roles"
+      ];
+
+      for (const table of userTables) {
+        try {
+          const { error } = await supabase.from(table as any).delete().eq("user_id", userId);
+          if (error) console.warn(`Clean up warning for ${table}:`, error.message);
+        } catch (e) {
+          console.error(`Clean up failed for ${table}:`, e);
+        }
+      }
       
-      // 2. Delete linked user roles
-      await supabase.from("user_roles").delete().eq("user_id", userId);
-      
-      // 3. Delete linked employees profiles
+      // 3. Delete linked employees profiles (they follow owner_id)
       const { error: employeesError } = await supabase
         .from("profiles")
         .delete()
         .eq("owner_id", userId);
-      if (employeesError) throw employeesError;
+      if (employeesError) {
+        console.error("Employees profile delete error:", employeesError);
+        // We don't throw yet to try and delete the main owner anyway
+      }
 
       // 4. Finally, delete the owner profile itself and VERIFY row count
       // We use { count: 'exact' } to make sure something actually happened
@@ -440,7 +450,7 @@ export function useDeleteOwner() {
 
       if (count === 0) {
         console.error("No profile found to delete for ID:", userId);
-        throw new Error("لم يتم العثور على المنشأة في قاعدة البيانات لحذفها. قد يكون الرقم التعريفي غير صحيح.");
+        throw new Error("لم يتم العثور على المنشأة في قاعدة البيانات لحذفها.");
       }
       
       console.log(`ULTIMATE delete completed. Rows affected: ${count}`);
