@@ -125,21 +125,44 @@ export default function AdminOwnerDetails() {
   }, [transactions, typeFilter, timeFilter, customStart, customEnd]);
 
   const handleExport = async (format: 'excel' | 'csv') => {
-    if (!owner || !id) return;
+    if (!owner || !id) {
+      console.error("Export Error: Owner or ID is missing", { owner, id });
+      return;
+    }
+    
     try {
-      toast({ title: lang === "ar" ? "جاري تحضير النسخة الاحتياطية..." : "Preparing backup..." });
-      const data = await exportData.mutateAsync({ ownerId: id, businessName: owner.business_name || owner.name });
+      const ownerName = owner.business_name || owner.name || "Business";
+      console.log(`Starting ${format} export for:`, ownerName);
+      
+      toast({ 
+        title: lang === "ar" ? "جاري تحضير الملف..." : "Preparing file...",
+        description: lang === "ar" ? "يرجى الانتظار" : "Please wait"
+      });
+
+      // Pass the prefetchedProfile (owner) to skip the falling database query
+      const data = await exportData.mutateAsync({ 
+        ownerId: id, 
+        businessName: ownerName,
+        prefetchedProfile: owner 
+      });
       
       if (format === 'excel') {
-        exportOwnerDataToExcel(data, owner.business_name || owner.name);
+        exportOwnerDataToExcel(data, ownerName);
       } else {
-        exportOwnerDataToCSV(data, owner.business_name || owner.name);
+        exportOwnerDataToCSV(data, ownerName);
       }
 
-      toast({ title: t("common.success"), description: lang === "ar" ? "تم التصدير بنجاح" : "Exported successfully" });
+      toast({ 
+        title: t("common.success"), 
+        description: lang === "ar" ? "تم استخراج البيانات بنجاح" : "Data exported successfully" 
+      });
     } catch (err) {
-      console.error("Export error:", err);
-      toast({ variant: "destructive", title: t("common.error") });
+      console.error("CRITICAL EXPORT ERROR:", err);
+      toast({ 
+        variant: "destructive", 
+        title: t("common.error"),
+        description: lang === "ar" ? "فشل التصدير، يرجى المحاولة لاحقاً" : "Export failed, please try again"
+      });
     }
   };
 

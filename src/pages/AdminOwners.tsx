@@ -47,15 +47,24 @@ export default function AdminOwners() {
   const exportData = useExportOwnerData();
   const { toast } = useToast();
 
-  const handleExport = async (ownerId: string, businessName: string, format: 'excel' | 'csv') => {
+  const handleExport = async (owner: any, format: 'excel' | 'csv') => {
     try {
-      toast({ title: lang === "ar" ? "جاري تحضير النسخة الاحتياطية..." : "Preparing backup...", description: lang === "ar" ? "يرجى الانتظار قليلاً" : "Please wait..." });
-      const data = await exportData.mutateAsync({ ownerId, businessName });
+      const ownerName = owner.business_name || owner.name || "Business";
+      toast({ 
+        title: lang === "ar" ? "جاري تحضير الملف..." : "Preparing file...", 
+        description: lang === "ar" ? "يرجى الانتظار قليلاً" : "Please wait..." 
+      });
+      
+      const data = await exportData.mutateAsync({ 
+        ownerId: owner.user_id, 
+        businessName: ownerName,
+        prefetchedProfile: owner
+      });
       
       if (format === 'excel') {
-        exportOwnerDataToExcel(data, businessName);
+        exportOwnerDataToExcel(data, ownerName);
       } else {
-        exportOwnerDataToCSV(data, businessName);
+        exportOwnerDataToCSV(data, ownerName);
       }
 
       toast({ title: t("common.success"), description: lang === "ar" ? "تم تحميل الملف بنجاح" : "File downloaded successfully" });
@@ -173,7 +182,7 @@ export default function AdminOwners() {
 
                       <DropdownMenuItem 
                         disabled={exportData.isPending}
-                        onClick={() => handleExport(o.user_id, o.business_name || o.name, 'excel')}
+                        onClick={() => handleExport(o, 'excel')}
                         className="rounded-xl px-4 py-2.5 cursor-pointer focus:bg-emerald-50 focus:text-emerald-600 transition-colors font-bold text-xs"
                       >
                         <FileSpreadsheet className="h-4 w-4 me-2" />
@@ -182,7 +191,7 @@ export default function AdminOwners() {
 
                       <DropdownMenuItem 
                         disabled={exportData.isPending}
-                        onClick={() => handleExport(o.user_id, o.business_name || o.name, 'csv')}
+                        onClick={() => handleExport(o, 'csv')}
                         className="rounded-xl px-4 py-2.5 cursor-pointer focus:bg-blue-50 focus:text-blue-600 transition-colors font-bold text-xs"
                       >
                         <FileCode className="h-4 w-4 me-2" />

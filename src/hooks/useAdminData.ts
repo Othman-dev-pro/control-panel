@@ -446,14 +446,11 @@ export function useOwnerTransactions(ownerId: string) {
 
 export function useExportOwnerData() {
   return useMutation({
-    mutationFn: async ({ ownerId, businessName }: { ownerId: string; businessName: string }) => {
-      // 1. Fetch Profile
-      const { data: profile, error: profileErr } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("user_id", ownerId)
-        .single();
-      if (profileErr) throw profileErr;
+    mutationFn: async ({ ownerId, businessName, prefetchedProfile }: { ownerId: string; businessName: string; prefetchedProfile?: any }) => {
+      // 1. Use existing profile data if available, or just the business name
+      const profile = prefetchedProfile || { business_name: businessName, name: businessName };
+      
+      console.log("Exporting for:", businessName, "ID:", ownerId);
 
       // 2. Fetch All Customers
       const { data: customers, error: customerErr } = await supabase
