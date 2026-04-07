@@ -37,24 +37,24 @@ const App = () => (
             <Routes>
               {/* Public Redirection */}
               <Route path="/" element={<Index />} />
-              <Route path="/admin/login" element={<AdminLogin />} />
+              <Route path="/dean-othmanassdpro/login" element={<AdminLogin />} />
 
               {/* Admin Routes */}
-              <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
-              <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={["super_admin"]}><AdminDashboard /></ProtectedRoute>} />
-              <Route path="/admin/owners" element={<ProtectedRoute allowedRoles={["super_admin"]}><AdminOwners /></ProtectedRoute>} />
-              <Route path="/admin/owners/:id" element={<ProtectedRoute allowedRoles={["super_admin"]}><AdminOwnerDetails /></ProtectedRoute>} />
-              <Route path="/admin/subscriptions" element={<ProtectedRoute allowedRoles={["super_admin"]}><AdminSubscriptions /></ProtectedRoute>} />
-              <Route path="/admin/plans" element={<ProtectedRoute allowedRoles={["super_admin"]}><AdminPlans /></ProtectedRoute>} />
-              <Route path="/admin/trials" element={<ProtectedRoute allowedRoles={["super_admin"]}><AdminTrials /></ProtectedRoute>} />
-              <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={["super_admin"]}><AdminSettings /></ProtectedRoute>} />
-              <Route path="/admin/ads" element={<ProtectedRoute allowedRoles={["super_admin"]}><AdminAds /></ProtectedRoute>} />
-              <Route path="/admin/branding" element={<ProtectedRoute allowedRoles={["super_admin"]}><AdminBranding /></ProtectedRoute>} />
-              <Route path="/admin/contact" element={<ProtectedRoute allowedRoles={["super_admin"]}><AdminContact /></ProtectedRoute>} />
-              <Route path="/admin/payment-accounts" element={<ProtectedRoute allowedRoles={["super_admin"]}><AdminPaymentAccounts /></ProtectedRoute>} />
-              <Route path="/admin/texts" element={<ProtectedRoute allowedRoles={["super_admin"]}><AdminTexts /></ProtectedRoute>} />
-              <Route path="/admin/backup" element={<ProtectedRoute allowedRoles={["super_admin"]}><AdminBackup /></ProtectedRoute>} />
-              <Route path="/admin/requests" element={<ProtectedRoute allowedRoles={["super_admin"]}><AdminRequests /></ProtectedRoute>} />
+              <Route path="/dean-othmanassdpro" element={<Navigate to="/dean-othmanassdpro/login" replace />} />
+              <Route path="/dean-othmanassdpro/dashboard" element={<ProtectedRoute allowedRoles={["super_admin"]}><AdminDashboard /></ProtectedRoute>} />
+              <Route path="/dean-othmanassdpro/owners" element={<ProtectedRoute allowedRoles={["super_admin"]}><AdminOwners /></ProtectedRoute>} />
+              <Route path="/dean-othmanassdpro/owners/:id" element={<ProtectedRoute allowedRoles={["super_admin"]}><AdminOwnerDetails /></ProtectedRoute>} />
+              <Route path="/dean-othmanassdpro/subscriptions" element={<ProtectedRoute allowedRoles={["super_admin"]}><AdminSubscriptions /></ProtectedRoute>} />
+              <Route path="/dean-othmanassdpro/plans" element={<ProtectedRoute allowedRoles={["super_admin"]}><AdminPlans /></ProtectedRoute>} />
+              <Route path="/dean-othmanassdpro/trials" element={<ProtectedRoute allowedRoles={["super_admin"]}><AdminTrials /></ProtectedRoute>} />
+              <Route path="/dean-othmanassdpro/settings" element={<ProtectedRoute allowedRoles={["super_admin"]}><AdminSettings /></ProtectedRoute>} />
+              <Route path="/dean-othmanassdpro/ads" element={<ProtectedRoute allowedRoles={["super_admin"]}><AdminAds /></ProtectedRoute>} />
+              <Route path="/dean-othmanassdpro/branding" element={<ProtectedRoute allowedRoles={["super_admin"]}><AdminBranding /></ProtectedRoute>} />
+              <Route path="/dean-othmanassdpro/contact" element={<ProtectedRoute allowedRoles={["super_admin"]}><AdminContact /></ProtectedRoute>} />
+              <Route path="/dean-othmanassdpro/payment-accounts" element={<ProtectedRoute allowedRoles={["super_admin"]}><AdminPaymentAccounts /></ProtectedRoute>} />
+              <Route path="/dean-othmanassdpro/texts" element={<ProtectedRoute allowedRoles={["super_admin"]}><AdminTexts /></ProtectedRoute>} />
+              <Route path="/dean-othmanassdpro/backup" element={<ProtectedRoute allowedRoles={["super_admin"]}><AdminBackup /></ProtectedRoute>} />
+              <Route path="/dean-othmanassdpro/requests" element={<ProtectedRoute allowedRoles={["super_admin"]}><AdminRequests /></ProtectedRoute>} />
 
               <Route path="*" element={<NotFound />} />
             </Routes>

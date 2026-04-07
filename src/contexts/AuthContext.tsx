@@ -44,6 +44,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadUserProfile = useCallback(async (authUser: SupabaseUser, version: number) => {
     try {
+      // Step 0: Ensure database status is fresh by triggering expiration check
+      await (supabase.rpc as any)("update_expired_subscriptions");
+
       const { data: rolesData } = await supabase
         .from("user_roles")
         .select("role")
