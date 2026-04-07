@@ -66,6 +66,7 @@ export function useDeleteOwner() {
       // Stage 4: Reset Business Identity (Keep the user for Customer role)
       // We clear the business fields. If the user logs in again, they won't have a business
       // and will be forced to create one (onboarding), but they remain as a user for customer purposes.
+      const now = new Date().toISOString();
       const { error: resetError } = await supabase
         .from("profiles")
         .update({
@@ -73,8 +74,10 @@ export function useDeleteOwner() {
           is_subscription_active: false,
           subscription_status: "expired",
           is_suspended: false,
-          owner_id: null, // Ensure they are not an employee either
-          updated_at: new Date().toISOString()
+          subscription_ends_at: now,
+          trial_ends_at: now,
+          owner_id: null,
+          updated_at: now
         } as any)
         .eq("user_id", userId);
 
