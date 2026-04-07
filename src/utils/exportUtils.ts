@@ -1,0 +1,83 @@
+import * as XLSX from "xlsx";
+
+/**
+ * وظيفة لتحويل البيانات إلى ملف إكسل بصفحات متعددة
+ * @param ownerData البيانات التي سيتم تصديرها
+ * @param businessName اسم المنشأة لتسمية الملف
+ */
+export const exportOwnerDataToExcel = (ownerData: any, businessName: string) => {
+  const { customers, transactions, profile } = ownerData;
+
+  // 1. تجهيز صفحة معلومات المنشأة
+  const profileSheet = [
+    { "المعلومة": "اسم المنشأة", "القيمة": profile.business_name },
+    { "المعلومة": "اسم المالك", "القيمة": profile.name },
+    { "المعلومة": "الهاتف", "القيمة": profile.phone },
+    { "المعلومة": "حالة الاشتراك", "القيمة": profile.subscription_status },
+    { "المعلومة": "تاريخ التصدير", "القيمة": new Date().toLocaleString("ar-YE") },
+  ];
+
+  // 2. تجهيز صفحة الزبائن
+  const customersSheet = customers.map((c: any) => ({
+    "اسم الزبون": c.name,
+    "رقم الهاتف": c.phone || "-",
+    "العنوان": c.address || "-",
+    "تاريخ الإضافة": new Date(c.created_at).toLocaleDateString("ar-YE"),
+  }));
+
+  // 3. تجهيز صفحة العمليات (ديون وسدادات)
+  const transactionsSheet = transactions.map((t: any) => ({
+    "اسم الزبون": t.customer_name,
+    "نوع العملية": t.type === "debt" ? "دين" : "سداد",
+    "المبلغ": t.amount,
+    "التاريخ": new Date(t.created_at).toLocaleString("ar-YE"),
+    "ملاحظات": t.note || "-",
+  }));
+
+  // إنشاء كتاب عمل جديد (Workbook)
+  const wb = XLSX.utils.book_new();
+
+  // تحويل المصفوفات إلى صفحات (Worksheets)
+  const wsProfile = XLSX.utils.json_to_sheet(profileSheet);
+  const wsCustomers = XLSX.utils.json_to_sheet(customersSheet);
+  const wsTransactions = XLSX.utils.json_to_sheet(transactionsSheet);
+
+  // إضافة الصفحات لكتاب العمل
+  XLSX.utils.book_append_sheet(wb, wsProfile, "معلومات المنشأة");
+  XLSX.utils.book_append_sheet(wb, wsCustomers, "الزبائن");
+  XLSX.utils.book_append_sheet(wb, wsTransactions, "العمليات");
+
+  // تصدير وتحميل الملف
+  const fileName = `نسخة_احتياطية_${businessName.replace(/\s+/g, "_")}_${new Date().toISOString().split('T')[0]}.xlsx`;
+  XLSX.writeFile(wb, fileName);
+};
+
+/**
+ * وظيفة لتحويل البيانات إلى ملف CSV (للزبائن والعمليات مدمجة)
+ */
+export const exportOwnerDataToCSV = (ownerData: any, businessName: string) => {
+  const { transactions } = ownerData;
+  
+  // تجهيز البيانات بصيغة مبسطة للـ CSV
+  const csvRows = [
+    ["اسم الزبون", "نوع العملية", "المبلغ", "التاريخ", "ملاحظات"].join(","),
+    ...transactions.map((t: any) => [
+      `"${t.customer_name}"`,
+      t.type === "debt" ? "دين" : "سداد",
+      t.amount,
+      `"${new Date(t.created_at).toLocaleString("ar-YE")}"`,
+      `"${t.note || "-"}"`
+    ].join(","))
+  ].join("\n");
+
+  const blob = new Blob(["\ufeff" + csvRows], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
+  const url = URL.createObjectURL(blob);
+  
+  link.setAttribute("href", url);
+  link.setAttribute("download", `نسخة_احتياطية_${businessName.replace(/\s+/g, "_")}.csv`);
+  link.style.visibility = "hidden";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};

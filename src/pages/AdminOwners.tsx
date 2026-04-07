@@ -1,5 +1,6 @@
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useAdminOwners, useSuspendOwner } from "@/hooks/useAdminData";
+import { useAdminOwners, useSuspendOwner, useExportOwnerData } from "@/hooks/useAdminData";
+import { exportOwnerDataToExcel, exportOwnerDataToCSV } from "@/utils/exportUtils";
 import DashboardLayout from "@/components/DashboardLayout";
 import { 
   Users, 
@@ -15,7 +16,10 @@ import {
   ArrowRight,
   BarChart3,
   Building2,
-  Activity
+  Activity,
+  FileSpreadsheet,
+  FileCode,
+  Loader2
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
@@ -40,7 +44,26 @@ export default function AdminOwners() {
   
   const { data: owners = [], isLoading } = useAdminOwners(page, pageSize);
   const suspendOwner = useSuspendOwner();
+  const exportData = useExportOwnerData();
   const { toast } = useToast();
+
+  const handleExport = async (ownerId: string, businessName: string, format: 'excel' | 'csv') => {
+    try {
+      toast({ title: lang === "ar" ? "جاري تحضير النسخة الاحتياطية..." : "Preparing backup...", description: lang === "ar" ? "يرجى الانتظار قليلاً" : "Please wait..." });
+      const data = await exportData.mutateAsync({ ownerId, businessName });
+      
+      if (format === 'excel') {
+        exportOwnerDataToExcel(data, businessName);
+      } else {
+        exportOwnerDataToCSV(data, businessName);
+      }
+
+      toast({ title: t("common.success"), description: lang === "ar" ? "تم تحميل الملف بنجاح" : "File downloaded successfully" });
+    } catch (err) {
+      console.error("Export error:", err);
+      toast({ variant: "destructive", title: t("common.error"), description: lang === "ar" ? "فشل استخراج البيانات" : "Failed to export data" });
+    }
+  };
 
   const handleToggleSuspension = async (userId: string, isSuspended: boolean) => {
     try {
@@ -133,17 +156,41 @@ export default function AdminOwners() {
                         <Settings2 className="h-5 w-5" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56 rounded-[24px] border-border bg-card/95 backdrop-blur-md p-1.5 shadow-2xl">
+                    <DropdownMenuContent align="end" className="w-64 rounded-[24px] border-border bg-card/95 backdrop-blur-md p-2 shadow-2xl">
                       <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-4 py-2 opacity-50">
                         {lang === "ar" ? "خيارات متقدمة" : "Advanced Controls"}
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator className="bg-border/30" />
+                      
                       <DropdownMenuItem className="rounded-xl px-4 py-2.5 cursor-pointer focus:bg-primary/5 focus:text-primary transition-colors font-bold text-xs" asChild>
                         <Link to={`/admin/owners/${o.user_id}`}>
                           <BarChart3 className="h-4 w-4 me-2" />
                           <span>{lang === "ar" ? "التقارير العميقة" : "Deep Analytics"}</span>
                         </Link>
                       </DropdownMenuItem>
+
+                      <DropdownMenuSeparator className="bg-border/10" />
+
+                      <DropdownMenuItem 
+                        disabled={exportData.isPending}
+                        onClick={() => handleExport(o.user_id, o.business_name || o.name, 'excel')}
+                        className="rounded-xl px-4 py-2.5 cursor-pointer focus:bg-emerald-50 focus:text-emerald-600 transition-colors font-bold text-xs"
+                      >
+                        <FileSpreadsheet className="h-4 w-4 me-2" />
+                        <span>{lang === "ar" ? "تصدير نسخة إكسل (Excel)" : "Export to Excel"}</span>
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem 
+                        disabled={exportData.isPending}
+                        onClick={() => handleExport(o.user_id, o.business_name || o.name, 'csv')}
+                        className="rounded-xl px-4 py-2.5 cursor-pointer focus:bg-blue-50 focus:text-blue-600 transition-colors font-bold text-xs"
+                      >
+                        <FileCode className="h-4 w-4 me-2" />
+                        <span>{lang === "ar" ? "تصدير نسخة CSV" : "Export to CSV"}</span>
+                      </DropdownMenuItem>
+
+                      <DropdownMenuSeparator className="bg-border/10" />
+
                       <DropdownMenuItem 
                         onClick={() => handleToggleSuspension(o.user_id, o.is_suspended)}
                         className={`rounded-xl px-4 py-2.5 cursor-pointer transition-colors font-bold text-xs ${

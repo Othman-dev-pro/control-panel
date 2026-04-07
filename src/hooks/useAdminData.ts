@@ -445,6 +445,57 @@ export function useOwnerTransactions(ownerId: string) {
   });
 }
 
+export function useExportOwnerData() {
+  return useMutation({
+    mutationFn: async ({ ownerId, businessName }: { ownerId: string; businessName: string }) => {
+      // 1. Fetch Profile
+      const { data: profile, error: profileErr } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("user_id", ownerId)
+        .single();
+      if (profileErr) throw profileErr;
+
+      // 2. Fetch All Customers
+      const { data: customers, error: customerErr } = await supabase
+        .from("customers")
+        .select("*")
+        .eq("owner_id", ownerId);
+      if (customerErr) throw customerErr;
+
+      // 3. Fetch All Debts & Payments (Transactions)
+      const [debtsRes, paymentsRes] = await Promise.all([
+        supabase.from("debts").select("*, customers(name)").eq("owner_id", ownerId),
+        supabase.from("payments").select("*, customers(name)").eq("owner_id", ownerId),
+      ]);
+
+      if (debtsRes.error) throw debtsRes.error;
+      if (paymentsRes.error) throw paymentsRes.error;
+
+      const debts = (debtsRes.data || []).map(d => ({ 
+        ...d, 
+        type: "debt",
+        customer_name: d.customers?.name 
+      }));
+      const payments = (paymentsRes.data || []).map(p => ({ 
+        ...p, 
+        type: "payment",
+        customer_name: p.customers?.name 
+      }));
+
+      const transactions = [...debts, ...payments].sort((a, b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+
+      return {
+        profile,
+        customers: customers || [],
+        transactions
+      };
+    }
+  });
+}
+
 export function useUpdateAdminAuth() {
   const qc = useQueryClient();
   return useMutation({
