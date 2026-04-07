@@ -27,7 +27,7 @@ export default function AdminBranding() {
     if (settings) {
       setAppNameAr(settings["app_name_ar"] || "ديوني");
       setAppNameEn(settings["app_name_en"] || "Deyoni");
-      setAppIcon(settings["app_icon_url"] || "");
+      setAppIcon(settings["app_icon_url"] || "/logo.png");
       setPlayStoreUrl(settings["play_store_url"] || "");
       setAppStoreUrl(settings["app_store_url"] || "");
     }

@@ -56,8 +56,8 @@ export default function Index() {
       <nav className="fixed top-0 w-full z-50 bg-background/70 backdrop-blur-xl border-b border-border/50">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="h-10 w-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
-              <BarChart3 className="text-primary-foreground h-6 w-6" />
+            <div className="h-10 w-10 bg-white dark:bg-slate-900 rounded-xl flex items-center justify-center shadow-lg shadow-primary/10 overflow-hidden border border-border/50">
+              <img src="/logo.png" alt="Deyoni Logo" className="h-full w-full object-contain" />
             </div>
             <span className="text-2xl font-black tracking-tight">{t("landing.nav.home")}</span>
           </div>
@@ -214,8 +214,8 @@ export default function Index() {
           <div className="flex flex-col md:flex-row justify-between items-center gap-12 border-b border-background/10 pb-16">
             <div className={`text-center ${isRTL ? 'md:text-right' : 'md:text-left'} space-y-4`}>
               <div className={`flex items-center justify-center ${isRTL ? 'md:justify-start' : 'md:justify-end'} gap-3`}>
-                <div className="h-10 w-10 bg-primary rounded-xl flex items-center justify-center">
-                  <BarChart3 className="text-primary-foreground h-6 w-6" />
+                <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center overflow-hidden">
+                  <img src="/logo.png" alt="Deyoni Logo" className="h-full w-full object-contain" />
                 </div>
                 <span className="text-2xl font-black tracking-tight uppercase">ديوني</span>
               </div>
