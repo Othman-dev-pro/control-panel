@@ -59,7 +59,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatsSkeleton, TableSkeleton } from "@/components/SkeletonLoader";
 import { useToast } from "@/hooks/use-toast";
-import { exportToCSV } from "@/lib/exportUtils";
+
 
 export default function AdminOwnerDetails() {
   const { t, lang, formatCurrency } = useLanguage();

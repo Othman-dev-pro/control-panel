@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { getEffectiveStatus } from "@/lib/utils";
 
 export function useAdminOwners(page = 1, pageSize = 12) {
   return useQuery({
