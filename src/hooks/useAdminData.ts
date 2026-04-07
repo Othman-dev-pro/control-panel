@@ -462,24 +462,28 @@ export function useExportOwnerData() {
         .eq("owner_id", ownerId);
       if (customerErr) throw customerErr;
 
-      // 3. Fetch All Debts & Payments (Transactions)
+      // 3. Fetch All Debts & Payments (Transactions) - without complex joins to avoid 400 errors
       const [debtsRes, paymentsRes] = await Promise.all([
-        supabase.from("debts").select("*, customers(name)").eq("owner_id", ownerId),
-        supabase.from("payments").select("*, customers(name)").eq("owner_id", ownerId),
+        supabase.from("debts").select("*").eq("owner_id", ownerId),
+        supabase.from("payments").select("*").eq("owner_id", ownerId),
       ]);
 
       if (debtsRes.error) throw debtsRes.error;
       if (paymentsRes.error) throw paymentsRes.error;
 
+      // Map customer names manually for safety
+      const customerMap: Record<string, string> = {};
+      (customers || []).forEach(c => { customerMap[c.id] = c.name; });
+
       const debts = (debtsRes.data || []).map(d => ({ 
         ...d, 
         type: "debt",
-        customer_name: d.customers?.name 
+        customer_name: customerMap[d.customer_id] || "Unknown" 
       }));
       const payments = (paymentsRes.data || []).map(p => ({ 
         ...p, 
         type: "payment",
-        customer_name: p.customers?.name 
+        customer_name: customerMap[p.customer_id] || "Unknown" 
       }));
 
       const transactions = [...debts, ...payments].sort((a, b) => 
