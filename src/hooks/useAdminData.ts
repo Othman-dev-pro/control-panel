@@ -39,19 +39,23 @@ export function useDeleteOwner() {
     mutationFn: async (profileId: string) => {
       console.log("SNIPER PURGE: Targeting profileId:", profileId);
       
-      // Step 1: Identify the profile and its user_id
-      const { data: targetProfile, error: findError } = await supabase
-        .from("profiles")
-        .select("user_id, phone, role")
-        .eq("id", profileId)
-        .single();
-
-      if (findError || !targetProfile) {
-        throw new Error("لم يتم العثور على سجل المالك المطلوب.");
+      // Step 1: Identify the profile and its user_id (Flexible Search)
+      // We try to find the profile by ID, UserID, or Phone
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(profileId);
+      
+      let query = supabase.from("profiles").select("id, user_id, phone, role").eq("role", "owner");
+      
+      if (isUuid) {
+        query = query.or(`id.eq.${profileId},user_id.eq.${profileId}`);
+      } else {
+        query = query.eq("phone", profileId);
       }
 
-      if (targetProfile.role !== 'owner') {
-        throw new Error("هذا السجل ليس لمنشأة، لا يمكن حذفه من هنا.");
+      const { data: targetProfile, error: findError } = await query.maybeSingle();
+
+      if (findError || !targetProfile) {
+        console.error("Find error or no profile:", findError, profileId);
+        throw new Error("لم يتم العثور على سجل المالك المطلوب بقاعدة البيانات.");
       }
 
       const userId = targetProfile.user_id;
