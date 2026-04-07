@@ -6,7 +6,8 @@ import {
   useAdminOwners, 
   useDeleteOwner,
   useOwnerTransactions,
-  useExportOwnerData
+  useExportOwnerData,
+  ExtendedCustomer
 } from "@/hooks/useAdminData";
 import { exportOwnerDataToExcel, exportOwnerDataToCSV } from "@/utils/exportUtils";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -68,7 +69,7 @@ export default function AdminOwnerDetails() {
   const { toast } = useToast();
   
   const { data: owners = [], isLoading: ownersLoading } = useAdminOwners(1, 100); 
-  const { data: customers = [], isLoading: customersLoading } = useOwnerCustomers(id || "");
+  const { data: customers = [] as ExtendedCustomer[], isLoading: customersLoading } = useOwnerCustomers(id || "");
   const { data: allOwnerTransactions = [] } = useOwnerTransactions(id || "");
   const deleteOwner = useDeleteOwner();
   const exportData = useExportOwnerData();
