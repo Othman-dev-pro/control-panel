@@ -42,6 +42,11 @@ export const exportOwnerDataToExcel = (ownerData: any, businessName: string) => 
   const wsCustomers = XLSX.utils.json_to_sheet(customersSheet);
   const wsTransactions = XLSX.utils.json_to_sheet(transactionsSheet);
 
+  // تعيين عرض الأعمدة ليكون الملف مرتباً
+  const wscols = [{ wch: 25 }, { wch: 25 }, { wch: 15 }, { wch: 20 }, { wch: 40 }];
+  wsCustomers["!cols"] = wscols;
+  wsTransactions["!cols"] = wscols;
+
   // إضافة الصفحات لكتاب العمل
   XLSX.utils.book_append_sheet(wb, wsProfile, "معلومات المنشأة");
   XLSX.utils.book_append_sheet(wb, wsCustomers, "الزبائن");
@@ -53,29 +58,31 @@ export const exportOwnerDataToExcel = (ownerData: any, businessName: string) => 
 };
 
 /**
- * وظيفة لتحويل البيانات إلى ملف CSV (للزبائن والعمليات مدمجة)
+ * وظيفة لتحويل البيانات إلى ملف CSV متوافق مع الإكسل العربي
  */
 export const exportOwnerDataToCSV = (ownerData: any, businessName: string) => {
   const { transactions } = ownerData;
   
-  // تجهيز البيانات بصيغة مبسطة للـ CSV
-  const csvRows = [
-    ["اسم الزبون", "نوع العملية", "المبلغ", "التاريخ", "ملاحظات"].join(","),
-    ...transactions.map((t: any) => [
-      `"${t.customer_name}"`,
-      t.type === "debt" ? "دين" : "سداد",
-      t.amount,
-      `"${new Date(t.created_at).toLocaleString("ar-YE")}"`,
-      `"${t.note || "-"}"`
-    ].join(","))
-  ].join("\n");
+  // إضافة سطر التعريف لتسهيل فتحه في الإكسل بالأعمدة الصحيحة
+  const header = "sep=;";
+  const columns = ["اسم الزبون", "نوع العملية", "المبلغ", "التاريخ", "ملاحظات"].join(";");
+  
+  const rows = transactions.map((t: any) => [
+    `"${t.customer_name}"`,
+    t.type === "debt" ? "دين" : "سداد",
+    t.amount,
+    `"${new Date(t.created_at).toLocaleString("ar-YE")}"`,
+    `"${(t.note || "-").replace(/"/g, '""')}"`
+  ].join(";"));
 
-  const blob = new Blob(["\ufeff" + csvRows], { type: "text/csv;charset=utf-8;" });
+  const csvContent = [header, columns, ...rows].join("\n");
+
+  const blob = new Blob(["\ufeff" + csvContent], { type: "text/csv;charset=utf-8;" });
   const link = document.createElement("a");
   const url = URL.createObjectURL(blob);
   
   link.setAttribute("href", url);
-  link.setAttribute("download", `نسخة_احتياطية_${businessName.replace(/\s+/g, "_")}.csv`);
+  link.setAttribute("download", `Backup_${businessName.replace(/\s+/g, "_")}.csv`);
   link.style.visibility = "hidden";
   document.body.appendChild(link);
   link.click();
