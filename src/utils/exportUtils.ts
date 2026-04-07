@@ -6,32 +6,33 @@ import * as XLSX from "xlsx";
  * @param businessName اسم المنشأة لتسمية الملف
  */
 export const exportOwnerDataToExcel = (ownerData: any, businessName: string) => {
-  const { customers, transactions, profile } = ownerData;
+  if (!ownerData) return;
+  const { customers = [], transactions = [], profile = {} } = ownerData;
 
   // 1. تجهيز صفحة معلومات المنشأة
   const profileSheet = [
-    { "المعلومة": "اسم المنشأة", "القيمة": profile.business_name },
-    { "المعلومة": "اسم المالك", "القيمة": profile.name },
-    { "المعلومة": "الهاتف", "القيمة": profile.phone },
-    { "المعلومة": "حالة الاشتراك", "القيمة": profile.subscription_status },
+    { "المعلومة": "اسم المنشأة", "القيمة": profile?.business_name || businessName || "-" },
+    { "المعلومة": "اسم المالك", "القيمة": profile?.name || "-" },
+    { "المعلومة": "الهاتف", "القيمة": profile?.phone || "-" },
+    { "المعلومة": "حالة الاشتراك", "القيمة": profile?.subscription_status || "-" },
     { "المعلومة": "تاريخ التصدير", "القيمة": new Date().toLocaleString("ar-YE") },
   ];
 
   // 2. تجهيز صفحة الزبائن
   const customersSheet = customers.map((c: any) => ({
-    "اسم الزبون": c.name,
-    "رقم الهاتف": c.phone || "-",
-    "العنوان": c.address || "-",
-    "تاريخ الإضافة": new Date(c.created_at).toLocaleDateString("ar-YE"),
+    "اسم الزبون": c?.name || "-",
+    "رقم الهاتف": c?.phone || "-",
+    "العنوان": c?.address || "-",
+    "تاريخ الإضافة": c?.created_at ? new Date(c.created_at).toLocaleDateString("ar-YE") : "-",
   }));
 
   // 3. تجهيز صفحة العمليات (ديون وسدادات)
   const transactionsSheet = transactions.map((t: any) => ({
-    "اسم الزبون": t.customer_name,
-    "نوع العملية": t.type === "debt" ? "دين" : "سداد",
-    "المبلغ": t.amount,
-    "التاريخ": new Date(t.created_at).toLocaleString("ar-YE"),
-    "ملاحظات": t.note || "-",
+    "اسم الزبون": t?.customer_name || "-",
+    "نوع العملية": t?.type === "debt" ? "دين" : "سداد",
+    "المبلغ": t?.amount || 0,
+    "التاريخ": t?.created_at ? new Date(t.created_at).toLocaleString("ar-YE") : "-",
+    "ملاحظات": t?.note || "-",
   }));
 
   // إنشاء كتاب عمل جديد (Workbook)
@@ -53,7 +54,8 @@ export const exportOwnerDataToExcel = (ownerData: any, businessName: string) => 
   XLSX.utils.book_append_sheet(wb, wsTransactions, "العمليات");
 
   // تصدير وتحميل الملف
-  const fileName = `نسخة_احتياطية_${businessName.replace(/\s+/g, "_")}_${new Date().toISOString().split('T')[0]}.xlsx`;
+  const safeBusinessName = (businessName || "Business").replace(/\s+/g, "_");
+  const fileName = `نسخة_احتياطية_${safeBusinessName}_${new Date().toISOString().split('T')[0]}.xlsx`;
   XLSX.writeFile(wb, fileName);
 };
 
@@ -61,18 +63,19 @@ export const exportOwnerDataToExcel = (ownerData: any, businessName: string) => 
  * وظيفة لتحويل البيانات إلى ملف CSV متوافق مع الإكسل العربي
  */
 export const exportOwnerDataToCSV = (ownerData: any, businessName: string) => {
-  const { transactions } = ownerData;
+  if (!ownerData || !ownerData.transactions) return;
+  const { transactions = [] } = ownerData;
   
   // إضافة سطر التعريف لتسهيل فتحه في الإكسل بالأعمدة الصحيحة
   const header = "sep=;";
   const columns = ["اسم الزبون", "نوع العملية", "المبلغ", "التاريخ", "ملاحظات"].join(";");
   
   const rows = transactions.map((t: any) => [
-    `"${t.customer_name}"`,
-    t.type === "debt" ? "دين" : "سداد",
-    t.amount,
-    `"${new Date(t.created_at).toLocaleString("ar-YE")}"`,
-    `"${(t.note || "-").replace(/"/g, '""')}"`
+    `"${t?.customer_name || "-"}"`,
+    t?.type === "debt" ? "دين" : "سداد",
+    t?.amount || 0,
+    `"${t?.created_at ? new Date(t.created_at).toLocaleString("ar-YE") : "-"}"`,
+    `"${(t?.note || "-").replace(/"/g, '""')}"`
   ].join(";"));
 
   const csvContent = [header, columns, ...rows].join("\n");
@@ -82,7 +85,7 @@ export const exportOwnerDataToCSV = (ownerData: any, businessName: string) => {
   const url = URL.createObjectURL(blob);
   
   link.setAttribute("href", url);
-  link.setAttribute("download", `Backup_${businessName.replace(/\s+/g, "_")}.csv`);
+  link.setAttribute("download", `Backup_${(businessName || "Business").replace(/\s+/g, "_")}.csv`);
   link.style.visibility = "hidden";
   document.body.appendChild(link);
   link.click();
