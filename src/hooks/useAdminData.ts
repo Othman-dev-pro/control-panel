@@ -41,7 +41,7 @@ export function useDeleteOwner() {
       
       // Step: Execute the high-privilege server-side function
       const { error } = await supabase.rpc("hard_purge_owner", {
-        p_profile_id: profileId
+        p_identifier: profileId.toString()
       });
 
       if (error) {
