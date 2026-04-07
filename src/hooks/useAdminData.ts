@@ -11,9 +11,9 @@ export function useAdminOwners(page = 1, pageSize = 12) {
     queryKey: ["admin-owners", page, pageSize],
     queryFn: async () => {
       // Auto-trigger the update for expired subscriptions before fetching
-      await supabase.rpc("update_expired_subscriptions");
+      await (supabase.rpc as any)("update_expired_subscriptions");
       
-      const { data, error } = await supabase.rpc("get_admin_owners_stats" as any, {
+      const { data, error } = await (supabase.rpc as any)("get_admin_owners_stats", {
         p_limit: pageSize,
         p_offset: (page - 1) * pageSize
       });
@@ -43,7 +43,7 @@ export function useDeleteOwner() {
       console.log("HARD PURGE: Calling RPC for profileId:", profileId);
       
       // Step: Execute the high-privilege server-side function
-      const { error } = await supabase.rpc("hard_purge_owner", {
+      const { error } = await (supabase.rpc as any)("hard_purge_owner", {
         p_identifier: profileId.toString()
       });
 
@@ -93,4 +93,56 @@ export function useApproveRequest() { const qc = useQueryClient(); return useMut
 export function useRejectRequest() { const qc = useQueryClient(); return useMutation({ mutationFn: async ({ requestId, message }: any) => { await supabase.from("admin_requests" as any).update({ status: "rejected", admin_message: message, updated_at: new Date().toISOString() }).eq("id", requestId); }, onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-requests"] }) }); }
 export const useDeletionRequests = useAdminRequests; export const useApproveDeletion = useApproveRequest; export const useRejectDeletion = useRejectRequest;
 export function useUpdateAdminAuth() { return useMutation({ mutationFn: async ({ email, password }: any) => { await supabase.auth.updateUser({ email, password }); } }); }
-export function useExportOwnerData() { return useMutation({ mutationFn: async ({ ownerId, businessName, prefetchedProfile }: any) => { const p = prefetchedProfile || { business_name: businessName, name: businessName }; const [c, d, py] = await Promise.all([supabase.from("customers").select("*").eq("owner_id", ownerId), supabase.from("debts").select("*").eq("owner_id", ownerId), supabase.from("payments").select("*").eq("owner_id", ownerId)]); const m: Record<string, string> = {}; (c.data || []).forEach(x => { m[x.id] = x.name; }); const tx = [...(d.data || []).map(x => ({ ...x, type: "debt", customer_name: m[x.customer_id] || "Unknown" })), ...(py.data || []).map(x => ({ ...x, type: "payment", customer_name: m[x.customer_id] || "Unknown" }))].sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()); return { profile: p, customers: c.data || [], transactions: tx }; } }); }
+export function useExportOwnerData() {
+  return useMutation({
+    mutationFn: async ({ ownerId, businessName, prefetchedProfile }: any) => {
+      const p = prefetchedProfile || { business_name: businessName, name: businessName };
+      
+      const [c, d, py] = await Promise.all([
+        supabase.from("customers").select("*").eq("owner_id", ownerId),
+        supabase.from("debts").select("*").eq("owner_id", ownerId),
+        supabase.from("payments").select("*").eq("owner_id", ownerId)
+      ]);
+
+      const customersData = c.data || [];
+      const debtsData = d.data || [];
+      const paymentsData = py.data || [];
+
+      // Calculate totals per customer
+      const financials: Record<string, { debts: number, payments: number }> = {};
+      customersData.forEach(cust => {
+        financials[cust.id] = { debts: 0, payments: 0 };
+      });
+
+      debtsData.forEach(debt => {
+        if (financials[debt.customer_id]) {
+          financials[debt.customer_id].debts += (debt.amount || 0);
+        }
+      });
+
+      paymentsData.forEach(payment => {
+        if (financials[payment.customer_id]) {
+          financials[payment.customer_id].payments += (payment.amount || 0);
+        }
+      });
+
+      // Enrich customers with counts
+      const enrichedCustomers = customersData.map(cust => ({
+        ...cust,
+        total_debts: financials[cust.id]?.debts || 0,
+        total_payments: financials[cust.id]?.payments || 0,
+        balance: (financials[cust.id]?.debts || 0) - (financials[cust.id]?.payments || 0)
+      }));
+
+      const m: Record<string, string> = {};
+      enrichedCustomers.forEach(x => { m[x.id] = x.name; });
+
+      const tx = [
+        ...debtsData.map(x => ({ ...x, type: "debt", customer_name: m[x.customer_id] || "Unknown" })),
+        ...paymentsData.map(x => ({ ...x, type: "payment", customer_name: m[x.customer_id] || "Unknown" }))
+      ].sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      return { profile: p, customers: enrichedCustomers, transactions: tx };
+    }
+  });
+}

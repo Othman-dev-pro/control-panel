@@ -18,21 +18,25 @@ export const exportOwnerDataToExcel = (ownerData: any, businessName: string) => 
     { "المعلومة": "تاريخ التصدير", "القيمة": new Date().toLocaleString("ar-YE") },
   ];
 
-  // 2. تجهيز صفحة الزبائن
+  // 2. تجهيز صفحة الزبائن (مع البيانات المالية)
   const customersSheet = customers.map((c: any) => ({
     "اسم الزبون": c?.name || "-",
     "رقم الهاتف": c?.phone || "-",
     "العنوان": c?.address || "-",
+    "سقف الديون": c?.debt_limit || 0,
+    "إجمالي الديون": c?.total_debts || 0,
+    "إجمالي السداد": c?.total_payments || 0,
+    "المتبقي": c?.balance || 0,
     "تاريخ الإضافة": c?.created_at ? new Date(c.created_at).toLocaleDateString("ar-YE") : "-",
   }));
 
-  // 3. تجهيز صفحة العمليات (ديون وسدادات)
+  // 3. تجهيز صفحة العمليات (ديون وسدادات وتفاصيل)
   const transactionsSheet = transactions.map((t: any) => ({
     "اسم الزبون": t?.customer_name || "-",
     "نوع العملية": t?.type === "debt" ? "دين" : "سداد",
     "المبلغ": t?.amount || 0,
     "التاريخ": t?.created_at ? new Date(t.created_at).toLocaleString("ar-YE") : "-",
-    "ملاحظات": t?.note || "-",
+    "التفاصيل": t?.description || t?.note || "-",
   }));
 
   // إنشاء كتاب عمل جديد (Workbook)
@@ -43,10 +47,19 @@ export const exportOwnerDataToExcel = (ownerData: any, businessName: string) => 
   const wsCustomers = XLSX.utils.json_to_sheet(customersSheet);
   const wsTransactions = XLSX.utils.json_to_sheet(transactionsSheet);
 
+  // تفعيل خاصية اليمين لليسار (RTL) لكل الصفحات
+  wsProfile["!views"] = [{ RTL: true }];
+  wsCustomers["!views"] = [{ RTL: true }];
+  wsTransactions["!views"] = [{ RTL: true }];
+
   // تعيين عرض الأعمدة ليكون الملف مرتباً
-  const wscols = [{ wch: 25 }, { wch: 25 }, { wch: 15 }, { wch: 20 }, { wch: 40 }];
-  wsCustomers["!cols"] = wscols;
-  wsTransactions["!cols"] = wscols;
+  const profileCols = [{ wch: 20 }, { wch: 40 }];
+  const customerCols = [{ wch: 25 }, { wch: 15 }, { wch: 30 }, { wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 20 }];
+  const txCols = [{ wch: 25 }, { wch: 12 }, { wch: 12 }, { wch: 25 }, { wch: 40 }];
+  
+  wsProfile["!cols"] = profileCols;
+  wsCustomers["!cols"] = customerCols;
+  wsTransactions["!cols"] = txCols;
 
   // إضافة الصفحات لكتاب العمل
   XLSX.utils.book_append_sheet(wb, wsProfile, "معلومات المنشأة");
