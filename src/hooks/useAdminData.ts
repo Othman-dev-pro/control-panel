@@ -16,6 +16,8 @@ export function useAdminOwners(page = 1, pageSize = 12) {
         return data.map((p: any) => ({
           ...p,
           subscription_status: p.subscription_status,
+          subscription_ends_at: p.subscription_ends_at,
+          trial_ends_at: p.trial_ends_at,
           stats: {
             customersCount: Number(p.customers_count || 0),
             totalDebts: Number(p.total_debts || 0),
