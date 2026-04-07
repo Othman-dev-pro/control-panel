@@ -170,10 +170,15 @@ export default function AdminOwnerDetails() {
     if (!id || !canDelete) return;
     try {
       await deleteOwner.mutateAsync(id);
-      toast({ title: lang === "ar" ? "تم حذف المنشأة" : "Business Deleted" });
+      toast({ title: lang === "ar" ? "تم حذف المنشأة نهائياً" : "Business Permanently Deleted" });
       navigate("/admin/owners");
-    } catch {
-      toast({ variant: "destructive", title: lang === "ar" ? "خطأ" : "Error" });
+    } catch (err: any) {
+      console.error("Owner delete error:", err);
+      toast({ 
+        variant: "destructive", 
+        title: lang === "ar" ? "خطأ في الحذف الجذري" : "Hard Purge Error",
+        description: err.message || (lang === "ar" ? "فشل الحذف، يرجى التحقق من السجلات" : "Deletion failed, please check logs")
+      });
     }
   };
 
