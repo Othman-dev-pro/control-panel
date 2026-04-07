@@ -63,16 +63,20 @@ export function useDeleteOwner() {
       // Stage 3: Employees Purge
       await supabase.from("profiles").delete().eq("owner_id", userId);
 
-      // Stage 4: Final Profile Purge
-      // Since all dependencies are gone, we can safely delete the profile.
-      // This forces a complete re-registration (onboarding) but leaves the user
-      // identity in Auth for other potential roles (handled by Auth).
-      await supabase
+      // Stage 4: Final Profile Purge (Aggressive)
+      // We try to delete by user_id OR id to ensure we capture the record correctly.
+      const { error: deleteError, count } = await supabase
         .from("profiles")
-        .delete()
-        .eq("user_id", userId);
+        .delete({ count: 'exact' })
+        .or(`user_id.eq.${userId},id.eq.${userId}`);
 
-      console.log("SAFE HARD PURGE: Success. Profile removed.");
+      if (deleteError) throw deleteError;
+      if (count === 0) {
+        console.error("Purge failed: Profile not found for ID:", userId);
+        throw new Error("فشل الحذف: لم يتم العثور على سجل المالك في قاعدة البيانات.");
+      }
+
+      console.log(`SAFE HARD PURGE: Success. ${count} profile(s) removed.`);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-owners"] });
