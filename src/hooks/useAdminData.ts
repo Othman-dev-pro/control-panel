@@ -80,14 +80,17 @@ export function useDeleteOwner() {
       await supabase.from("profiles").delete().eq("owner_id", userId).eq("role", "employee");
 
       // Step 5: Delete ONLY the OWNER profile row
-      const { error: finalDeleteError } = await supabase
+      const { error: finalDeleteError, count } = await supabase
         .from("profiles")
-        .delete()
-        .eq("id", profileId);
+        .delete({ count: 'exact' })
+        .eq("id", targetProfile.id);
 
       if (finalDeleteError) throw finalDeleteError;
+      if (count === 0) {
+        throw new Error("فشل الحذف النهائي: لم يتم العثور على السجل المطابق في قاعدة البيانات.");
+      }
       
-      console.log("SNIPER PURGE: Success. Business role removed. Customer role preserved if existed.");
+      console.log(`SNIPER PURGE: Success. Profile ${targetProfile.id} removed.`);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-owners"] });
