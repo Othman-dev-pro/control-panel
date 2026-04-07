@@ -25,58 +25,65 @@ export function useAdminOwners(page = 1, pageSize = 12) {
           }
         }));
       }
-      const { data: directData, error: directError } = await supabase.from("profiles").select("*").order("created_at", { ascending: false });
+      const { data: directData, error: directError } = await supabase.from("profiles").select("*").eq("role", "owner").order("created_at", { ascending: false });
       if (directError) throw directError;
       return (directData || []).map((p: any) => ({ ...p, stats: { customersCount: 0, totalDebts: 0, totalPayments: 0, remainingBalance: 0 } }));
     }
   });
 }
 
-// --- 2. THE HARD PURGE (Safe Business Deletion) ---
+// --- 2. THE SNIPER PURGE (Final Correct Solution) ---
 export function useDeleteOwner() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (userId: string) => {
-      console.log("SAFE HARD PURGE: Starting for userId:", userId);
+    mutationFn: async (profileId: string) => {
+      console.log("SNIPER PURGE: Targeting profileId:", profileId);
       
-      // Get the profile to access the phone number for OTP cleanup
-      const { data: profile } = await supabase.from("profiles").select("phone").eq("user_id", userId).single();
+      // Step 1: Identify the profile and its user_id
+      const { data: targetProfile, error: findError } = await supabase
+        .from("profiles")
+        .select("user_id, phone, role")
+        .eq("id", profileId)
+        .single();
 
-      // Stage 1: Business Specific Data
-      const TablesWithOwnerId = [
-        "payments", "orders", "debts", "customers", 
-        "payment_methods", "admin_requests", "employee_permissions"
-      ];
-      for (const table of TablesWithOwnerId) {
+      if (findError || !targetProfile) {
+        throw new Error("لم يتم العثور على سجل المالك المطلوب.");
+      }
+
+      if (targetProfile.role !== 'owner') {
+        throw new Error("هذا السجل ليس لمنشأة، لا يمكن حذفه من هنا.");
+      }
+
+      const userId = targetProfile.user_id;
+      console.log("Found user_id:", userId, "for phone:", targetProfile.phone);
+
+      // Step 2: Purge Business Data (linked by user_id)
+      const tables = ["payments", "orders", "debts", "customers", "payment_methods", "admin_requests", "employee_permissions"];
+      for (const table of tables) {
         await supabase.from(table as any).delete().eq("owner_id", userId);
       }
 
-      // Stage 2: User-linked Meta Data
+      // Step 3: Meta metadata
       await supabase.from("notifications").delete().eq("user_id", userId);
       await supabase.from("fcm_tokens").delete().eq("user_id", userId);
-      await supabase.from("user_roles").delete().eq("user_id", userId);
+      await supabase.from("user_roles").delete().filter("user_id", "eq", userId).filter("role", "eq", "owner");
       
-      if (profile?.phone) {
-        await supabase.from("otp_codes").delete().eq("phone", profile.phone);
+      if (targetProfile.phone) {
+        await supabase.from("otp_codes").delete().eq("phone", targetProfile.phone);
       }
 
-      // Stage 3: Employees Purge
-      await supabase.from("profiles").delete().eq("owner_id", userId);
+      // Step 4: Employees (They follow the owner's user_id)
+      await supabase.from("profiles").delete().eq("owner_id", userId).eq("role", "employee");
 
-      // Stage 4: Final Profile Purge (Aggressive)
-      // We try to delete by user_id OR id to ensure we capture the record correctly.
-      const { error: deleteError, count } = await supabase
+      // Step 5: Delete ONLY the OWNER profile row
+      const { error: finalDeleteError } = await supabase
         .from("profiles")
-        .delete({ count: 'exact' })
-        .or(`user_id.eq.${userId},id.eq.${userId}`);
+        .delete()
+        .eq("id", profileId);
 
-      if (deleteError) throw deleteError;
-      if (count === 0) {
-        console.error("Purge failed: Profile not found for ID:", userId);
-        throw new Error("فشل الحذف: لم يتم العثور على سجل المالك في قاعدة البيانات.");
-      }
-
-      console.log(`SAFE HARD PURGE: Success. ${count} profile(s) removed.`);
+      if (finalDeleteError) throw finalDeleteError;
+      
+      console.log("SNIPER PURGE: Success. Business role removed. Customer role preserved if existed.");
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-owners"] });
@@ -85,7 +92,7 @@ export function useDeleteOwner() {
   });
 }
 
-// ... Rest of the hooks (restored in correct state) ...
+// ... Rest of the hooks remain unchanged but consistent ...
 
 export function useAdminStats() {
   return useQuery({
@@ -93,7 +100,7 @@ export function useAdminStats() {
     queryFn: async () => {
       const { data, error } = await supabase.rpc("get_admin_dashboard_stats" as any);
       if (!error && data) return data;
-      const { data: profiles, error: pError } = await supabase.from("profiles").select("subscription_status");
+      const { data: profiles, error: pError } = await supabase.from("profiles").select("subscription_status").eq("role", "owner");
       if (pError) throw pError;
       return {
         totalOwners: (profiles || []).length,
@@ -127,33 +134,25 @@ export function useOwnerCustomers(ownerId: string) {
 }
 
 export function useCustomerTransactions(customerId: string) {
-  return useQuery({
-    queryKey: ["customer-transactions", customerId],
-    queryFn: async () => {
-      if (!customerId) return [];
-      const [d, p] = await Promise.all([supabase.from("debts").select("*").eq("customer_id", customerId), supabase.from("payments").select("*").eq("customer_id", customerId)]);
-      return [...(d.data || []).map(x => ({ ...x, type: "debt" })), ...(p.data || []).map(x => ({ ...x, type: "payment" }))].sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-    },
-    enabled: !!customerId,
-  });
+  return useQuery({ queryKey: ["customer-transactions", customerId], queryFn: async () => {
+    if (!customerId) return [];
+    const [d, p] = await Promise.all([supabase.from("debts").select("*").eq("customer_id", customerId), supabase.from("payments").select("*").eq("customer_id", customerId)]);
+    return [...(d.data || []).map(x => ({ ...x, type: "debt" })), ...(p.data || []).map(x => ({ ...x, type: "payment" }))].sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  }, enabled: !!customerId });
 }
 
 export function useOwnerTransactions(ownerId: string) {
-  return useQuery({
-    queryKey: ["owner-transactions", ownerId],
-    queryFn: async () => {
-      if (!ownerId) return [];
-      const [d, p] = await Promise.all([supabase.from("debts").select("*, customers(name)").eq("owner_id", ownerId), supabase.from("payments").select("*, customers(name)").eq("owner_id", ownerId)]);
-      return [...(d.data || []).map(x => ({ ...x, type: "debt", customer_name: (x as any).customers?.name })), ...(p.data || []).map(x => ({ ...x, type: "payment", customer_name: (x as any).customers?.name }))].sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-    },
-    enabled: !!ownerId,
-  });
+  return useQuery({ queryKey: ["owner-transactions", ownerId], queryFn: async () => {
+    if (!ownerId) return [];
+    const [d, p] = await Promise.all([supabase.from("debts").select("*, customers(name)").eq("owner_id", ownerId), supabase.from("payments").select("*, customers(name)").eq("owner_id", ownerId)]);
+    return [...(d.data || []).map(x => ({ ...x, type: "debt", customer_name: (x as any).customers?.name })), ...(p.data || []).map(x => ({ ...x, type: "payment", customer_name: (x as any).customers?.name }))].sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  }, enabled: !!ownerId });
 }
 
 export function useSuspendOwner() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ userId, suspend }: any) => { await supabase.from("profiles").update({ is_suspended: suspend, is_subscription_active: !suspend, subscription_status: suspend ? "expired" : "active" } as any).eq("user_id", userId); },
+    mutationFn: async ({ userId, suspend }: any) => { await supabase.from("profiles").update({ is_suspended: suspend, is_subscription_active: !suspend, subscription_status: suspend ? "expired" : "active" } as any).eq("user_id", userId).eq("role", "owner"); },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-owners"] }),
   });
 }
@@ -169,7 +168,7 @@ export function useActivateSubscription() {
 export function usePauseSubscription() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ userId }: any) => { await supabase.from("profiles").update({ subscription_status: "expired", is_subscription_active: false } as any).eq("user_id", userId); },
+    mutationFn: async ({ userId }: any) => { await supabase.from("profiles").update({ subscription_status: "expired", is_subscription_active: false } as any).eq("user_id", userId).eq("role", "owner"); },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-owners"] }),
   });
 }
@@ -177,7 +176,7 @@ export function usePauseSubscription() {
 export function useResumeSubscription() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ userId }: any) => { await supabase.from("profiles").update({ subscription_status: "active", is_subscription_active: true, is_suspended: false } as any).eq("user_id", userId); },
+    mutationFn: async ({ userId }: any) => { await supabase.from("profiles").update({ subscription_status: "active", is_subscription_active: true, is_suspended: false } as any).eq("user_id", userId).eq("role", "owner"); },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-owners"] }),
   });
 }
@@ -185,7 +184,7 @@ export function useResumeSubscription() {
 export function useResetSubscription() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ userId }: any) => { const now = new Date().toISOString(); await supabase.from("profiles").update({ subscription_status: "expired", is_subscription_active: false, subscription_ends_at: now, trial_ends_at: now } as any).eq("user_id", userId); },
+    mutationFn: async ({ userId }: any) => { const now = new Date().toISOString(); await supabase.from("profiles").update({ subscription_status: "expired", is_subscription_active: false, subscription_ends_at: now, trial_ends_at: now } as any).eq("user_id", userId).eq("role", "owner"); },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-owners"] }),
   });
 }
@@ -201,7 +200,7 @@ export function useUpdateTrialDays() {
 export function useCancelTrial() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ userId }: any) => { await supabase.from("profiles").update({ trial_ends_at: new Date().toISOString(), subscription_status: "expired", is_subscription_active: false } as any).eq("user_id", userId); },
+    mutationFn: async ({ userId }: any) => { await supabase.from("profiles").update({ trial_ends_at: new Date().toISOString(), subscription_status: "expired", is_subscription_active: false } as any).eq("user_id", userId).eq("role", "owner"); },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-owners"] }),
   });
 }
