@@ -38,7 +38,7 @@ export function useCreateAd() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (ad: { image_url: string; link?: string; sort_order?: number }) => {
-      const { error } = await supabase.from("ads").insert(ad);
+      const { error } = await supabase.from("ads").insert({ ...ad, is_active: true });
       if (error) throw error;
     },
     onSuccess: () => {

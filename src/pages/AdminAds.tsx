@@ -65,6 +65,13 @@ export default function AdminAds() {
     await updateAd.mutateAsync({ id, [field]: value || null });
   };
 
+  const toLocalISOString = (dateStr: string | null) => {
+    if (!dateStr) return "";
+    const date = new Date(dateStr);
+    const tzOffset = date.getTimezoneOffset() * 60000;
+    return new Date(date.getTime() - tzOffset).toISOString().slice(0, 16);
+  };
+
   const isExpired = (ad: any) => {
     if (!ad.ends_at) return false;
     return new Date(ad.ends_at) < new Date();
@@ -188,7 +195,7 @@ export default function AdminAds() {
                           type="datetime-local" 
                           className="h-9 rounded-xl text-[10px] font-bold bg-white/50 border-border/30 focus:ring-primary/20" 
                           dir="ltr"
-                          defaultValue={ad.starts_at ? new Date(ad.starts_at).toISOString().slice(0, 16) : ""}
+                          defaultValue={toLocalISOString(ad.starts_at)}
                           onBlur={(e) => handleDateChange(ad.id, "starts_at", e.target.value ? new Date(e.target.value).toISOString() : "")} 
                         />
                       </div>
@@ -198,7 +205,7 @@ export default function AdminAds() {
                           type="datetime-local" 
                           className="h-9 rounded-xl text-[10px] font-bold bg-white/50 border-border/30 focus:ring-primary/20" 
                           dir="ltr"
-                          defaultValue={ad.ends_at ? new Date(ad.ends_at).toISOString().slice(0, 16) : ""}
+                          defaultValue={toLocalISOString(ad.ends_at)}
                           onBlur={(e) => handleDateChange(ad.id, "ends_at", e.target.value ? new Date(e.target.value).toISOString() : "")} 
                         />
                       </div>
