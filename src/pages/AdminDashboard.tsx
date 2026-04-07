@@ -94,7 +94,6 @@ export default function AdminDashboard() {
                                         <th className="px-6 py-5 text-start text-[10px] font-black uppercase tracking-widest text-muted-foreground">{lang === "ar" ? "الديون" : "Debts"}</th>
                                         <th className="px-6 py-5 text-start text-[10px] font-black uppercase tracking-widest text-muted-foreground">{lang === "ar" ? "السداد" : "Paid"}</th>
                                         <th className="px-6 py-5 text-start text-[10px] font-black uppercase tracking-widest text-muted-foreground">{lang === "ar" ? "المتبقي" : "Net"}</th>
-                                        <th className="px-6 py-5 text-start text-[10px] font-black uppercase tracking-widest text-muted-foreground">{t("admin.status")}</th>
                                         <th className="px-6 py-5 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">#</th>
                                     </tr>
                                 </thead>
@@ -118,11 +117,6 @@ export default function AdminDashboard() {
                                                 <td className="px-6 py-5 text-destructive font-black tabular-nums">{formatCurrency(ownerStats.totalDebts)}</td>
                                                 <td className="px-6 py-5 text-emerald-600 font-black tabular-nums">{formatCurrency(ownerStats.totalPayments)}</td>
                                                 <td className="px-6 py-5 font-black text-blue-600 tabular-nums">{formatCurrency(ownerStats.remainingBalance)}</td>
-                                                <td className="px-6 py-5">
-                                                    <span className={`inline-flex items-center rounded-full px-3 py-1 text-[9px] font-black border uppercase tracking-wider ${statusStyles[o.subscription_status] || "bg-muted text-muted-foreground border-border"}`}>
-                                                        {statusLabels[o.subscription_status] || o.subscription_status}
-                                                    </span>
-                                                </td>
                                                 <td className="px-6 py-5 text-center">
                                                     <Button asChild variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary transition-all">
                                                         <Link to={`/admin/owners/${o.user_id}`}>
