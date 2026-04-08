@@ -7,8 +7,8 @@
 
 @layer base {
   :root {
-    --font-sans: 'Plus Jakarta Sans', 'IBM Plex Sans Arabic', system-ui, -apple-system, sans-serif;
-    --font-arabic: 'Cairo', 'IBM Plex Sans Arabic', 'Plus Jakarta Sans', system-ui, sans-serif;
+    --font-sans: 'Cairo', 'Plus Jakarta Sans', system-ui, sans-serif;
+    --font-arabic: 'Cairo', system-ui, sans-serif;
 
     --background: 210 20% 98%;
     --foreground: 222 47% 11%;

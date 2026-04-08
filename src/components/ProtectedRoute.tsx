@@ -19,7 +19,7 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/admin/login" replace />;
+    return <Navigate to="/dean-othmanassdpro/login" replace />;
   }
 
   // The application is Web-Admin only, thus only super_admin should ever be permitted here.

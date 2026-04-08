@@ -17,19 +17,19 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { labelKey: "nav.dashboard", path: "/admin/dashboard", icon: LayoutDashboard },
-  { labelKey: "nav.owners", path: "/admin/owners", icon: Crown },
-  { labelKey: "nav.subscriptions", path: "/admin/subscriptions", icon: CreditCard },
-  { labelKey: "nav.trials", path: "/admin/trials", icon: Receipt },
-  { labelKey: "nav.plans", path: "/admin/plans", icon: FileText },
-  { labelKey: "nav.ads", path: "/admin/ads", icon: Image },
-  { labelKey: "nav.branding", path: "/admin/branding", icon: Palette },
-  { labelKey: "nav.contact", path: "/admin/contact", icon: MessageCircle },
-  { labelKey: "nav.paymentAccounts", path: "/admin/payment-accounts", icon: Building2 },
-  { labelKey: "nav.texts", path: "/admin/texts", icon: Type },
-  { labelKey: "nav.settings", path: "/admin/settings", icon: Settings },
-  { labelKey: "nav.backup", path: "/admin/backup", icon: Database },
-  { labelKey: "nav.adminRequests", path: "/admin/requests", icon: UserX },
+  { labelKey: "nav.dashboard", path: "/dean-othmanassdpro/dashboard", icon: LayoutDashboard },
+  { labelKey: "nav.owners", path: "/dean-othmanassdpro/owners", icon: Crown },
+  { labelKey: "nav.subscriptions", path: "/dean-othmanassdpro/subscriptions", icon: CreditCard },
+  { labelKey: "nav.trials", path: "/dean-othmanassdpro/trials", icon: Receipt },
+  { labelKey: "nav.plans", path: "/dean-othmanassdpro/plans", icon: FileText },
+  { labelKey: "nav.ads", path: "/dean-othmanassdpro/ads", icon: Image },
+  { labelKey: "nav.branding", path: "/dean-othmanassdpro/branding", icon: Palette },
+  { labelKey: "nav.contact", path: "/dean-othmanassdpro/contact", icon: MessageCircle },
+  { labelKey: "nav.paymentAccounts", path: "/dean-othmanassdpro/payment-accounts", icon: Building2 },
+  { labelKey: "nav.texts", path: "/dean-othmanassdpro/texts", icon: Type },
+  { labelKey: "nav.settings", path: "/dean-othmanassdpro/settings", icon: Settings },
+  { labelKey: "nav.backup", path: "/dean-othmanassdpro/backup", icon: Database },
+  { labelKey: "nav.adminRequests", path: "/dean-othmanassdpro/requests", icon: UserX },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -44,7 +44,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const appIconUrl = appSettings?.["app_icon_url"] || "";
 
   if (!user || user.role !== "super_admin") {
-    navigate("/admin/login");
+    navigate("/dean-othmanassdpro/login");
     return null;
   }
 

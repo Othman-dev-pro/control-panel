@@ -22,7 +22,7 @@ export default function AdminLogin() {
   // If already logged in as super_admin, redirect immediately
   useEffect(() => {
     if (user?.role === "super_admin") {
-      navigate("/admin/dashboard");
+      navigate("/dean-othmanassdpro/dashboard");
     }
   }, [user, navigate]);
 
@@ -66,7 +66,7 @@ export default function AdminLogin() {
       // Small delay helps the AuthContext's onAuthStateChange propagate to all listeners
       // eliminating the "double login" issue where the next page thinks user is null
       setTimeout(() => {
-        navigate("/admin/dashboard");
+        navigate("/dean-othmanassdpro/dashboard");
       }, 800);
 
     } catch (error: any) {
