@@ -59,7 +59,7 @@ export default function Index() {
             <div className="h-10 w-10 bg-white dark:bg-slate-900 rounded-xl flex items-center justify-center shadow-lg shadow-primary/10 overflow-hidden border border-border/50">
               <img src="/logo.png" alt="Deyoni Logo" className="h-full w-full object-contain" />
             </div>
-            <span className="text-2xl font-black tracking-tight">{t("landing.nav.home")}</span>
+            <span className="text-2xl font-black tracking-tight">ديوني</span>
           </div>
 
           <div className="flex items-center gap-4 lg:gap-8">
@@ -103,10 +103,6 @@ export default function Index() {
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>
-
-            <Button className="rounded-full px-8 bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl shadow-primary/20 transition-all active:scale-95 text-xs font-black uppercase hidden sm:flex">
-              {t("landing.hero.cta.download")}
-            </Button>
           </div>
         </div>
       </nav>
@@ -146,9 +142,7 @@ export default function Index() {
                         <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" alt="Google Play" className="h-14 w-auto grayscale-[0.2] dark:grayscale-[0.4] hover:grayscale-0 transition-all" />
                     </a>
                     <a href={appStoreUrl} target="_blank" rel="noopener noreferrer" className="transition-transform hover:scale-105 active:scale-95 shadow-xl rounded-xl overflow-hidden">
-                        <img src={theme === "dark" 
-                            ? "https://developer.apple.com/app-store/marketing/guidelines/images/badge-download-on-the-app-store.svg" 
-                            : "https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge_US-UK_RGB_blk_092917.svg"} 
+                        <img src="https://developer.apple.com/app-store/marketing/guidelines/images/badge-download-on-the-app-store.svg" 
                           alt="App Store" className="h-14 w-auto grayscale-[0.2] dark:grayscale-0 hover:grayscale-0 transition-all border border-slate-800/20 dark:border-white/10 rounded-xl" />
                     </a>
                 </div>
