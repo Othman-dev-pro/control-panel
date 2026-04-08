@@ -43,10 +43,10 @@ const translations: Record<Language, Record<string, string>> = {
     "landing.footer.download": "حمل التطبيق الآن",
 
     // Common
-    "app.name": "ديبت فلو",
+    "app.name": "ديوني",
     "app.tagline": "إدارة ذكية للديون للمنشآت الحديثة",
     "app.tagline.sub": "تتبع ديون العملاء، سجل المدفوعات، وأدر مالية منشأتك بسهولة.",
-    "app.copyright": "© 2026 ديبت فلو. جميع الحقوق محفوظة.",
+    "app.copyright": "© 2026 ديوني. جميع الحقوق محفوظة.",
     "common.save": "حفظ",
     "common.cancel": "إلغاء",
     "common.search": "بحث",
@@ -119,7 +119,7 @@ const translations: Record<Language, Record<string, string>> = {
     "login.notAdmin": "لست مدير نظام؟",
     "login.regularLink": "الدخول العادي",
     "login.adminPortal": "بوابة مدير النظام",
-    "login.adminSubtitle": "إدارة نظام ديبت فلو",
+    "login.adminSubtitle": "إدارة نظام ديوني",
     "login.adminPhone": "هاتف المدير",
     "login.signinAdmin": "دخول كمدير النظام",
     "login.email": "البريد الإلكتروني",
@@ -267,7 +267,7 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Admin
     "admin.overview": "نظرة عامة على النظام",
-    "admin.subtitle": "إدارة منصة ديبت فلو",
+    "admin.subtitle": "إدارة منصة ديوني",
     "admin.totalOwners": "إجمالي المنشآت",
     "admin.activeSubscriptions": "اشتراكات نشطة",
     "admin.totalCustomers": "إجمالي الزبائن",
@@ -294,7 +294,7 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Register
     "register.title": "إنشاء حساب جديد",
-    "register.subtitle": "سجل في ديبت فلو",
+    "register.subtitle": "سجل في ديوني",
     "register.iama": "نوع الحساب",
     "register.sendOtp": "إرسال رمز التحقق",
     "register.otpSent": "تم إرسال رمز التحقق عبر واتساب",
@@ -497,10 +497,10 @@ const translations: Record<Language, Record<string, string>> = {
     "landing.footer.download": "Download App Now",
 
     // Common
-    "app.name": "DebtFlow",
+    "app.name": "Deyoni",
     "app.tagline": "Smart Debt Management for Modern Businesses",
     "app.tagline.sub": "Track customer debts, record payments, and manage your business finances with ease.",
-    "app.copyright": "© 2026 DebtFlow. All rights reserved.",
+    "app.copyright": "© 2026 Deyoni. All rights reserved.",
     "common.save": "Save",
     "common.cancel": "Cancel",
     "common.search": "Search",
@@ -573,7 +573,7 @@ const translations: Record<Language, Record<string, string>> = {
     "login.notAdmin": "Not an admin?",
     "login.regularLink": "Go to regular login",
     "login.adminPortal": "Admin Portal",
-    "login.adminSubtitle": "DebtFlow System Administration",
+    "login.adminSubtitle": "Deyoni System Administration",
     "login.adminPhone": "Admin Phone",
     "login.signinAdmin": "Sign In as Admin",
     "login.email": "Email Address",
@@ -721,7 +721,7 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Admin
     "admin.overview": "System Overview",
-    "admin.subtitle": "DebtFlow platform administration",
+    "admin.subtitle": "Deyoni platform administration",
     "admin.totalOwners": "Total Owners",
     "admin.activeSubscriptions": "Active Subscriptions",
     "admin.totalCustomers": "Total Customers",
@@ -748,7 +748,7 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Register
     "register.title": "Create Account",
-    "register.subtitle": "Sign up for DebtFlow",
+    "register.subtitle": "Sign up for Deyoni",
     "register.iama": "Account Type",
     "register.sendOtp": "Send Verification Code",
     "register.otpSent": "Verification code sent via WhatsApp",
