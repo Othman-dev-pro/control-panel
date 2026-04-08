@@ -96,8 +96,49 @@
 
 @layer utilities {
   .glass-card {
-    @apply bg-card/80 backdrop-blur-sm border border-border shadow-sm rounded-xl;
+    @apply bg-white/40 backdrop-blur-2xl border border-white/40 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)];
   }
+  
+  .glass-card-dark {
+    @apply bg-slate-950/40 backdrop-blur-2xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.5)];
+  }
+
+  .dot-grid {
+    background-image: radial-gradient(circle at 1px 1px, rgba(0,0,0,0.05) 1px, transparent 0);
+    background-size: 24px 24px;
+  }
+
+  .dot-grid-dark {
+    background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.03) 1px, transparent 0);
+    background-size: 24px 24px;
+  }
+
+  .mesh-gradient {
+    background-color: #f8fafc;
+    background-image: 
+      radial-gradient(at 0% 0%, hsla(217,100%,92%,1) 0, transparent 50%), 
+      radial-gradient(at 100% 100%, hsla(224,100%,94%,1) 0, transparent 50%);
+  }
+
+  .glow-orb {
+    @apply absolute blur-[120px] rounded-full opacity-60 pointer-events-none;
+    background: radial-gradient(circle, var(--tw-gradient-from) 0%, transparent 70%);
+  }
+
+  .text-glow {
+    text-shadow: 0 0 30px rgba(59, 130, 246, 0.3);
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-30px) rotate(2deg); }
+    100% { transform: translateY(0px) rotate(0deg); }
+  }
+
   .status-trial {
     background-color: hsl(var(--status-trial) / 0.1);
     color: hsl(var(--status-trial));
